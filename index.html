@@ -1067,10 +1067,12 @@ async function loadQuestions() {
     }
 
     window.addEventListener('resize', function() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+  if (camera) { // Überprüfen, ob die Kamera definiert ist
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+});
 
     // Funktion zur Aktualisierung der Sonnenposition
     function updateSunPosition() {
