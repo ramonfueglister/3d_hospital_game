@@ -228,29 +228,54 @@
       patient: []
     };
 
-    // Funktion zum Laden der Fragen aus der JSON-Datei
-    async function loadQuestions() {
-      try {
-        const response = await fetch('https://raw.githubusercontent.com/ramonfueglister/3d_hospital_game/main/questions.json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        loadedQuestions = data;
-        console.log('Fragen erfolgreich geladen:', loadedQuestions);
-      } catch (error) {
-        console.error('Fehler beim Laden der Fragen:', error);
-      }
-    }
+    // Variable zum Speichern der geladenen Fragen
+var loadedQuestions = {
+  doctor: [],
+  nurse: [],
+  patient: []
+};
 
-    async function startGame() {
-      await loadQuestions(); // Fragen laden, bevor das Spiel startet
-      document.getElementById('startScreen').style.display = 'none';
-      gameStartTime = Date.now(); // Spielstartzeit festlegen
-      init();
-      animate();
-      startTimer();
+// Funktion zum Laden der Fragen aus der JSON-Datei auf GitHub
+async function loadQuestions() {
+  try {
+    const response = await fetch('https://raw.githubusercontent.com/ramonfueglister/3d_hospital_game/main/questions.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
+    const data = await response.json();
+
+    // Überprüfen Sie den Inhalt der geladenen Daten
+    console.log('Fragen erfolgreich geladen:', data);
+
+    // Überprüfen Sie, ob die Daten im erwarteten Format vorliegen
+    if (data.doctor && data.nurse && data.patient) {
+      loadedQuestions = data;
+    } else {
+      console.error('Fehler: Die JSON-Daten haben nicht das erwartete Format.');
+    }
+  } catch (error) {
+    console.error('Fehler beim Laden der Fragen:', error);
+  }
+}
+
+async function startGame() {
+  await loadQuestions(); // Fragen laden, bevor das Spiel startet
+
+  // Überprüfen Sie, ob die Fragen erfolgreich geladen wurden
+  console.log('Geladene Fragen:', loadedQuestions);
+
+  if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length || !loadedQuestions.patient.length) {
+    console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
+    return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
+  }
+
+  document.getElementById('startScreen').style.display = 'none';
+  gameStartTime = Date.now(); // Spielstartzeit festlegen
+  init();
+  animate();
+  startTimer();
+}
+
 
     function init() {
       scene = new THREE.Scene();
