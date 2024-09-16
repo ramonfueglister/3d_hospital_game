@@ -323,6 +323,10 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
+      // Fokus auf das Renderer-Element setzen für Tastatursteuerung
+      renderer.domElement.tabIndex = 1; // Macht das Element fokussierbar
+      renderer.domElement.focus();
+
       // Beleuchtung
       var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
@@ -1353,7 +1357,7 @@
       animateHealing();
     }
 
-    // Funktion zum Spawnen eines einzelnen Patienten
+    // Funktion zur Heilung eines Patienten
     function spawnPatient() {
       var position = getRandomGroundPosition();
       if (position) {
@@ -1363,119 +1367,8 @@
 
     // --- Ende der neuen Funktionen für Patientenmanagement ---
 
-    function animate() {
-      if (!gameStarted || gameEnded) return;
-
-      requestAnimationFrame(animate);
-
-      // Bewegung der Krankenschwester
-      var speed = 1;
-      var deltaX = 0;
-      var deltaZ = 0;
-      if (controls.moveForward) deltaZ -= speed;
-      if (controls.moveBackward) deltaZ += speed;
-      if (controls.moveLeft) deltaX -= speed;
-      if (controls.moveRight) deltaX += speed;
-
-      nurse.position.x += deltaX;
-      nurse.position.z += deltaZ;
-
-      // Kollisionserkennung für Spieler
-      checkCollisions(nurse, deltaX, deltaZ);
-
-      // Arme der Spielfigur bewegen
-      animateArms(nurse, deltaX !== 0 || deltaZ !== 0);
-
-      // Türen öffnen/schließen und Kollision aktualisieren
-      updateDoors();
-
-      // Kamera folgen
-      camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 150; // Noch näher heranzoomen
-      camera.position.y = 80; // Niedrigeres Y-Level für mehr Nähe
-      camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
-
-      // Wände transparent machen, wenn sie die Sicht blockieren
-      updateTransparentWalls();
-
-      // NPC-Bewegung
-      npcs.forEach(function(npc) {
-        if (npc.isPaused) {
-          return; // NPC ist pausiert und bewegt sich nicht
-        }
-
-        // Wenn NPC kein Ziel hat, neues Ziel zuweisen
-        if (!npc.targetPosition) {
-          assignNPCTargetPosition(npc);
-        }
-
-        // Richtung zum Ziel berechnen
-        var direction = new THREE.Vector3().subVectors(npc.targetPosition, npc.position);
-        var distance = direction.length();
-
-        if (distance > 5) { // Halten Sie einen Mindestabstand zum Ziel
-          direction.normalize();
-          var npcSpeed = 1;
-          var deltaX_npc = direction.x * npcSpeed;
-          var deltaZ_npc = direction.z * npcSpeed;
-
-          npc.position.x += deltaX_npc;
-          npc.position.z += deltaZ_npc;
-
-          // Arme des NPCs bewegen
-          animateArms(npc, true);
-
-          // Kollisionserkennung für NPCs
-          if (checkCollisions(npc, deltaX_npc, deltaZ_npc)) {
-            // Bei Kollision neues Ziel zuweisen
-            assignNPCTargetPosition(npc);
-          }
-        } else {
-          // Ziel erreicht, neues Ziel zuweisen
-          assignNPCTargetPosition(npc);
-
-          // Arme des NPCs stoppen
-          animateArms(npc, false);
-        }
-      });
-
-      // Interaktion mit NPCs
-      npcs.forEach(function(npc) {
-        var distanceToNurse = nurse.position.distanceTo(npc.position);
-        if (distanceToNurse < 10) { // Erhöht für größere Szene
-          if (!questionActive && npc.type !== 'patient') {
-            // Überprüfen, ob NPC sich im Cooldown befindet
-            if (npc.cooldownActive) {
-              var currentTime = Date.now();
-              if (currentTime - npc.cooldownStartTime >= 60000) { // 1 Minute in ms
-                // Cooldown beendet
-                npc.cooldownActive = false;
-                npc.questionsAsked = 0;
-                showQuestion(npc);
-              } else {
-                // Cooldown noch aktiv
-                var remainingTime = Math.ceil((60000 - (currentTime - npc.cooldownStartTime)) / 1000);
-                showMessage(`${npc.name} kann bald wieder Fragen stellen. (${remainingTime} Sekunden verbleibend)`);
-              }
-            } else {
-              showQuestion(npc);
-            }
-          }
-        } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
-          hideQuestion();
-        }
-
-        // Behandlung von Patienteninteraktionen
-        if (npc.type === 'patient' && distanceToNurse < 10 && !npc.isHealed) {
-          healPatient(npc);
-        }
-      });
-
-      renderer.render(scene, camera);
-    }
-
     // Hinweis: Der ursprüngliche animate() Loop wurde bereits oben überschrieben.
-
+    
   </script>
 </body>
 </html>
