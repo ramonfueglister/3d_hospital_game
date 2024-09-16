@@ -3,26 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <title>Krankenhausabenteuer</title>
+  <!-- Google Fonts hinzufügen -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; font-family: 'Roboto', sans-serif; }
+
+    /* Verbesserter Startbildschirm */
     #startScreen {
       position: absolute;
       width: 100%;
       height: 100%;
-      background: white;
+      background: rgba(0, 0, 0, 0.7); /* Halbtransparenter Hintergrund */
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       z-index: 10;
       text-align: center;
-      padding: 20px;
+      padding: 40px;
+      color: #ffffff;
+      animation: fadeIn 1s ease-in-out;
     }
+
+    /* Titel-Stil */
+    #startScreen h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Beschreibungs-Stil */
+    #startScreen p {
+      font-size: 20px;
+      margin: 10px 0;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    /* Listen-Stil */
+    #startScreen ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      text-align: left;
+      max-width: 600px;
+    }
+
+    #startScreen li {
+      margin: 8px 0;
+      font-size: 18px;
+    }
+
+    /* Button-Stil */
     #startScreen button {
       padding: 15px 30px;
       font-size: 20px;
-      margin-top: 20px;
+      margin-top: 30px;
+      background-color: #ff4081;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
+
+    #startScreen button:hover {
+      background-color: #f50057;
+      transform: scale(1.05);
+    }
+
+    /* Fade-In Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* HUD und andere Elemente bleiben unverändert */
     #hud {
       position: absolute;
       top: 10px;
@@ -60,6 +117,16 @@
     #question button {
       margin-top: 10px;
       display: block;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #question button:hover {
+      background-color: #e0e0e0;
     }
     #endScreen {
       position: absolute;
@@ -75,13 +142,30 @@
       font-size: 36px;
       text-align: center;
     }
+    #endScreen button {
+      padding: 15px 30px;
+      font-size: 20px;
+      margin-top: 20px;
+      background-color: #ff4081;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    #endScreen button:hover {
+      background-color: #f50057;
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body>
+  <!-- Startbildschirm -->
   <div id="startScreen">
     <h1>Willkommen zum Krankenhausabenteuer</h1>
     <p>Steuerung:</p>
-    <ul style="text-align: left;">
+    <ul>
       <li><strong>W</strong> - Vorwärts bewegen</li>
       <li><strong>S</strong> - Rückwärts bewegen</li>
       <li><strong>A</strong> - Nach links bewegen</li>
@@ -91,17 +175,26 @@
     <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Punkte, bevor der Timer abläuft!</p>
     <button onclick="startGame()">Spiel starten</button>
   </div>
+
+  <!-- HUD -->
   <div id="hud">
     Punktzahl: <span id="score">0</span><br>
     Zeit: <span id="timer">600</span>s
   </div>
+
+  <!-- Nachrichtenbereich -->
   <div id="message"></div>
+
+  <!-- Endbildschirm -->
   <div id="endScreen" style="display: none;">
     <h1 id="endMessage"></h1>
     <button onclick="location.reload()">Neu starten</button>
   </div>
+
+  <!-- Three.js Bibliothek -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
+    // Globale Variablen für die Sonne und die Lichtquelle
     var scene, camera, renderer, nurse, controls;
     var npcs = [];
     var score = 0;
@@ -122,8 +215,15 @@
     var gameEnded = false;
     var waypoints = []; // Wegpunkte für die NPC-Bewegung
 
+    // Neue globale Variablen für die Sonne
+    var sun;
+    var directionalLight;
+    var gameStartTime;
+    var sunRadius = 50; // Radius der Sonnenbahn
+
     function startGame() {
       document.getElementById('startScreen').style.display = 'none';
+      gameStartTime = Date.now(); // Spielstartzeit festlegen
       init();
       animate();
       startTimer();
@@ -142,18 +242,17 @@
       // Beleuchtung
       var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
-      var directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-      directionalLight.position.set(0, 10, 0);
+      
+      directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      directionalLight.position.set(0, 50, 50); // Anfangsposition
+      directionalLight.castShadow = true;
       scene.add(directionalLight);
 
       // Himmel hinzufügen
       createSky();
 
-      // Boden
-      var floorTexture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/grass.jpg');
-      floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-      floorTexture.repeat.set(50, 50);
-      var floorMaterial = new THREE.MeshLambertMaterial({ map: floorTexture });
+      // Boden mit grünem Farbverlauf
+      var floorMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 }); // Forstgrün
       var floorGeometry = new THREE.PlaneGeometry(200, 200);
       var floor = new THREE.Mesh(floorGeometry, floorMaterial);
       floor.rotation.x = -Math.PI / 2;
@@ -173,7 +272,7 @@
       selectRandomNPCs();
 
       // Kameraposition
-      camera.position.set(0, 10, 20);
+      camera.position.set(0, 15, 30);
       camera.lookAt(nurse.position);
 
       // Steuerung
@@ -193,7 +292,7 @@
     function createSky() {
       var skyGeometry = new THREE.SphereGeometry(500, 32, 32);
       var skyMaterial = new THREE.MeshBasicMaterial({
-        map: new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/sky.jpg'), // Funktionierende Himmelstextur
+        color: 0x87CEEB, // Himmelblau
         side: THREE.BackSide
       });
       var sky = new THREE.Mesh(skyGeometry, skyMaterial);
@@ -202,8 +301,8 @@
       // Sonne hinzufügen
       var sunGeometry = new THREE.SphereGeometry(5, 32, 32);
       var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-      var sun = new THREE.Mesh(sunGeometry, sunMaterial);
-      sun.position.set(100, 100, -100);
+      sun = new THREE.Mesh(sunGeometry, sunMaterial);
+      sun.position.set(0, -sunRadius, 50); // Anfangsposition (unter dem Horizont)
       scene.add(sun);
     }
 
@@ -437,12 +536,11 @@
       rightLeg.position.set(0.25, 0.5, 0);
       nurse.add(rightLeg);
 
-      nurse.position.y = 0;
+      nurse.position.set(0, 0, 0);
       scene.add(nurse);
     }
 
     function createNPCPool() {
-      // (Unverändert)
       // 50 NPCs mit detaillierten Geschichten generieren
       for (var i = 0; i < 50; i++) {
         var npcType = ['doctor', 'nurse', 'patient'][Math.floor(Math.random() * 3)];
@@ -452,7 +550,6 @@
     }
 
     function selectRandomNPCs() {
-      // (Unverändert)
       // 10 zufällige NPCs auswählen
       currentNPCs = npcPool.sort(() => 0.5 - Math.random()).slice(0, 10);
       currentNPCs.forEach(function(data, index) {
@@ -462,7 +559,6 @@
     }
 
     function generateNPCData(type, index) {
-      // (Unverändert)
       var data = { idNumber: index, type: type };
       data.questions = [];
 
@@ -475,7 +571,7 @@
           data.story = `Ich bin ${data.name}, ein Spezialist für ${['Kardiologie', 'Neurologie', 'Onkologie', 'Orthopädie', 'Dermatologie'][index % 5]}.`;
           break;
         case 'nurse':
-          data.name = 'Schwester ' + ['Anna', 'Lisa', 'Maria', 'Julia', 'Sophie'][index % 5];
+          data.name = 'Pflegefachfrau ' + ['Diana', 'Bleona', 'Maria', 'Alina', 'Sophie'][index % 5];
           data.story = `Hallo, ich bin ${data.name}. Ich arbeite auf der Station für ${['Innere Medizin', 'Chirurgie', 'Pädiatrie', 'Gynäkologie', 'Psychiatrie'][index % 5]}.`;
           break;
         case 'patient':
@@ -686,8 +782,8 @@
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 20;
-      camera.position.y = nurse.position.y + 10;
+      camera.position.z = nurse.position.z + 30;
+      camera.position.y = nurse.position.y + 15;
       camera.lookAt(nurse.position.x, nurse.position.y + 2, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
@@ -711,17 +807,17 @@
         if (distance > 0.1) {
           direction.normalize();
           var npcSpeed = 0.05;
-          var deltaX = direction.x * npcSpeed;
-          var deltaZ = direction.z * npcSpeed;
+          var deltaX_npc = direction.x * npcSpeed;
+          var deltaZ_npc = direction.z * npcSpeed;
 
-          npc.position.x += deltaX;
-          npc.position.z += deltaZ;
+          npc.position.x += deltaX_npc;
+          npc.position.z += deltaZ_npc;
 
           // Arme des NPCs bewegen
           animateArms(npc, true);
 
           // Kollisionserkennung für NPCs
-          if (checkCollisions(npc, deltaX, deltaZ)) {
+          if (checkCollisions(npc, deltaX_npc, deltaZ_npc)) {
             // Bei Kollision neues Ziel zuweisen
             assignNPCTargetPosition(npc);
           }
@@ -745,6 +841,9 @@
           hideQuestion();
         }
       });
+
+      // Sonnenbewegung aktualisieren
+      updateSunPosition();
 
       renderer.render(scene, camera);
     }
@@ -946,6 +1045,45 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Funktion zur Aktualisierung der Sonnenposition
+    function updateSunPosition() {
+      if (!gameStartTime) return;
+
+      var elapsedTime = (Date.now() - gameStartTime) / 1000; // in Sekunden
+      var totalGameTime = 600; // Gesamtspielzeit in Sekunden
+      var t = elapsedTime / totalGameTime;
+
+      if (t > 1) t = 1; // Begrenzen auf t=1
+
+      // Berechne den Winkel der Sonne (von -90° bis +270°)
+      var angle = -Math.PI / 2 + t * 2 * Math.PI;
+
+      // Berechne die neue Position der Sonne
+      var x = sunRadius * Math.cos(angle);
+      var y = sunRadius * Math.sin(angle);
+      var z = 50; // Sonne bleibt in der Front der Szene
+
+      sun.position.set(x, y, z);
+
+      // Aktualisiere die Position des Lichts entsprechend der Sonne
+      directionalLight.position.set(x, y, z);
+      directionalLight.lookAt(0, 0, 0); // Licht auf die Szene ausrichten
+
+      // Ändere die Intensität des Lichts basierend auf der Sonnenhöhe
+      directionalLight.intensity = Math.max(0.2, y / sunRadius);
+
+      // Optional: Ändere die Farbe des Himmels basierend auf der Sonnenhöhe
+      var skyColor = new THREE.Color(0x87CEEB); // Standard Himmelblau
+      if (y < 0) {
+        skyColor = new THREE.Color(0x000033); // Nachtblau
+      } else if (y < sunRadius * 0.5) {
+        skyColor = new THREE.Color(0x87CEEB); // Himmelblau
+      } else {
+        skyColor = new THREE.Color(0xFFD700); // Gold
+      }
+      scene.background = skyColor;
+    }
   </script>
 </body>
 </html>
