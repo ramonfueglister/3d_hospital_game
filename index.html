@@ -709,12 +709,8 @@
       rightLeg.position.set(1, 0.5, 0);
       npc.add(rightLeg);
 
-      // NPC an zufälligem Wegpunkt platzieren
-      var startWaypoint = waypoints[Math.floor(Math.random() * waypoints.length)];
-      npc.position.copy(startWaypoint);
-
-      // Erhöhung der Y-Position, damit NPCs auf dem Boden stehen
-      npc.position.y = 4; // y = Bodenhöhe + halbe Höhe des Körpers
+      // Position setzen
+      npc.position.copy(data.spawnPosition || new THREE.Vector3(0, 4, 0));
 
       npc.name = data.name;
       npc.story = data.story;
@@ -728,11 +724,11 @@
       // Symbol über dem Kopf hinzufügen
       var spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.CanvasTexture(generateTextCanvas(symbol, 128)),
-        depthTest: false
+        transparent: true
       });
       var sprite = new THREE.Sprite(spriteMaterial);
       sprite.position.set(0, 10, 0);
-      sprite.scale.set(5, 5, 1);
+      sprite.scale.set(10, 10, 1);
       npc.add(sprite);
 
       scene.add(npc);
@@ -1110,7 +1106,7 @@
       var index = patients.length;
       var data = {
         idNumber: 'patient_' + index,
-        type: 'patient_custom',
+        type: 'patient',
         name: 'Patient ' + (index + 1),
         story: 'Hallo, ich bin Patient ' + (index + 1) + '.'
       };
@@ -1118,7 +1114,7 @@
     }
 
     // Funktion zum Erstellen eines Patienten
-    function createPatient(type, position) {
+    function createPatient(data, position) {
       var npc = new THREE.Group();
 
       // Körper
@@ -1165,11 +1161,12 @@
       npc.position.copy(position);
       npc.position.y = 4; // y = Bodenhöhe + halbe Höhe des Körpers
 
-      npc.name = type.name;
-      npc.story = type.story;
-      npc.type = type.type;
+      npc.name = data.name;
+      npc.story = data.story;
+      npc.type = data.type;
       npc.targetPosition = null;
       npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
+      npc.questionsAsked = 0; // Anzahl der gestellten Fragen
 
       // Symbol über dem Kopf hinzufügen
       var spriteMaterial = new THREE.SpriteMaterial({
@@ -1183,7 +1180,7 @@
 
       scene.add(npc);
       patients.push(npc);
-      npcs.push(npc); // Optional: Wenn Patienten Teil der allgemeinen NPC-Liste sein sollen
+      npcs.push(npc); // Patienten sind auch Teil der NPC-Liste
     }
 
     // Funktion zum Generieren einer zufälligen Position auf dem Boden außerhalb der Gebäude
@@ -1239,30 +1236,7 @@
       nextPatientSpawnTime = Date.now() + patientSpawnInterval + randomDelay;
     }
 
-    // Funktion zum Spawn des ersten Patienten mit Markierung
-    function spawnInitialPatient() {
-      var position = getRandomGroundPosition();
-      if (position) {
-        markSpawnLocation(position);
-        var patientData = generatePatientData();
-        createPatient(patientData, position);
-      }
-    }
-
-    // Funktion zum Markieren des Spawn-Ortes mit einem weißen 'H'
-    function markSpawnLocation(position) {
-      var spriteMaterial = new THREE.SpriteMaterial({
-        map: new THREE.CanvasTexture(generateTextCanvas('H', 128)),
-        transparent: true
-      });
-      var sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.set(position.x, 5, position.z); // leicht über dem Boden
-      sprite.scale.set(20, 20, 1);
-      scene.add(sprite);
-    }
-
     // --- Ende der neuen Funktionen für Patientenmanagement ---
-
   </script>
 </body>
 </html>
