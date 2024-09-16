@@ -219,7 +219,7 @@
     var sun;
     var directionalLight;
     var gameStartTime;
-    var sunRadius = 50; // Radius der Sonnenbahn
+    var sunRadius = 300; // Angepasster Radius der Sonnenbahn für größere Erde
 
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
@@ -267,11 +267,11 @@
       // Überprüfen Sie, ob die Fragen erfolgreich geladen wurden
       console.log('Geladene Fragen:', loadedQuestions);
 
-     if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length) {
-  console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
-  alert('Fehler beim Laden der Fragen. Bitte überprüfen Sie die Entwicklerkonsole für weitere Details.');
-  return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
-}
+      if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length) {
+        console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
+        alert('Fehler beim Laden der Fragen. Bitte überprüfen Sie die Entwicklerkonsole für weitere Details.');
+        return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
+      }
 
       document.getElementById('startScreen').style.display = 'none';
       gameStartTime = Date.now(); // Spielstartzeit festlegen
@@ -295,7 +295,7 @@
       scene.add(ambientLight);
       
       directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-      directionalLight.position.set(0, 50, 50); // Anfangsposition
+      directionalLight.position.set(0, 300, 300); // Anfangsposition angepasst
       directionalLight.castShadow = true;
       scene.add(directionalLight);
 
@@ -303,9 +303,9 @@
       createSky();
 
       // Erde als Boden hinzufügen (statt der grünen Plane)
-      var earthRadius = 50; // Angepasster Radius für bessere Skalierung
+      var earthRadius = 200; // Angepasster Radius für größere Erde
       var earthMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22, side: THREE.FrontSide });
-      var earthGeometry = new THREE.SphereGeometry(earthRadius, 32, 32);
+      var earthGeometry = new THREE.SphereGeometry(earthRadius, 64, 64);
       var earth = new THREE.Mesh(earthGeometry, earthMaterial);
       earth.position.set(0, earthRadius, 0); // So dass die untere Hälfte der Kugel auf y=0 liegt
       scene.add(earth);
@@ -324,7 +324,7 @@
       selectRandomNPCs();
 
       // Kameraposition
-      camera.position.set(0, 20, 60); // Angepasste Kameraposition für bessere Sicht
+      camera.position.set(0, earthRadius + 100, earthRadius + 150); // Angepasste Kameraposition für bessere Sicht
       camera.lookAt(nurse.position);
 
       // Steuerung
@@ -342,7 +342,7 @@
     }
 
     function createSky() {
-      var skyGeometry = new THREE.SphereGeometry(500, 32, 32);
+      var skyGeometry = new THREE.SphereGeometry(1000, 64, 64);
       var skyMaterial = new THREE.MeshBasicMaterial({
         color: 0x87CEEB, // Himmelblau
         side: THREE.BackSide
@@ -351,10 +351,10 @@
       scene.add(sky);
 
       // Sonne hinzufügen
-      var sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+      var sunGeometry = new THREE.SphereGeometry(10, 32, 32);
       var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       sun = new THREE.Mesh(sunGeometry, sunMaterial);
-      sun.position.set(0, -sunRadius, 50); // Anfangsposition (unter dem Horizont)
+      sun.position.set(0, -sunRadius, 300); // Anfangsposition (unter dem Horizont)
       scene.add(sun);
     }
 
@@ -377,15 +377,15 @@
 
     function createHospital() {
       var roomConfigs = [
-        { x: -30, z: -30, width: 20, depth: 30, name: 'Notaufnahme', color: 0xffcccc },
-        { x: 0, z: -30, width: 30, depth: 30, name: 'Wartezimmer', color: 0xccffcc },
-        { x: 35, z: -30, width: 30, depth: 30, name: 'Radiologie', color: 0xccccff },
-        { x: -30, z: 10, width: 30, depth: 30, name: 'Intensivstation', color: 0xffffcc },
-        { x: 10, z: 10, width: 40, depth: 30, name: 'Allgemeine Station', color: 0xffccff },
-        { x: 40, z: 10, width: 20, depth: 30, name: 'Operationssaal', color: 0xccffff },
-        { x: -30, z: 50, width: 20, depth: 30, name: 'Apotheke', color: 0xffe4b5 },
-        { x: 0, z: 50, width: 30, depth: 30, name: 'Labor', color: 0xd3d3d3 },
-        { x: 35, z: 50, width: 30, depth: 30, name: 'Personalraum', color: 0xadd8e6 }
+        { x: -150, z: -150, width: 40, depth: 60, name: 'Notaufnahme', color: 0xffcccc },
+        { x: 0, z: -150, width: 60, depth: 60, name: 'Wartezimmer', color: 0xccffcc },
+        { x: 175, z: -150, width: 60, depth: 60, name: 'Radiologie', color: 0xccccff },
+        { x: -150, z: 50, width: 60, depth: 60, name: 'Intensivstation', color: 0xffffcc },
+        { x: 50, z: 50, width: 80, depth: 60, name: 'Allgemeine Station', color: 0xffccff },
+        { x: 200, z: 50, width: 40, depth: 60, name: 'Operationssaal', color: 0xccffff },
+        { x: -150, z: 250, width: 40, depth: 60, name: 'Apotheke', color: 0xffe4b5 },
+        { x: 0, z: 250, width: 60, depth: 60, name: 'Labor', color: 0xd3d3d3 },
+        { x: 175, z: 250, width: 60, depth: 60, name: 'Personalraum', color: 0xadd8e6 }
       ];
 
       roomConfigs.forEach(function(config) {
@@ -397,8 +397,8 @@
     }
 
     function createRoom(config) {
-      var wallThickness = 0.5;
-      var wallHeight = 5;
+      var wallThickness = 1;
+      var wallHeight = 10;
       var wallsInRoom = [];
 
       var halfWidth = config.width / 2;
@@ -409,39 +409,39 @@
 
       // Linke Wand
       var leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
-      leftWall.position.set(config.x - halfWidth, wallHeight / 2, config.z);
+      leftWall.position.set(config.x - halfWidth, earthRadius + wallHeight / 2, config.z);
       scene.add(leftWall);
       wallsInRoom.push(leftWall);
 
       // Rechte Wand
       var rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
-      rightWall.position.set(config.x + halfWidth, wallHeight / 2, config.z);
+      rightWall.position.set(config.x + halfWidth, earthRadius + wallHeight / 2, config.z);
       scene.add(rightWall);
       wallsInRoom.push(rightWall);
 
       // Hintere Wand
       var backWall = new THREE.Mesh(new THREE.BoxGeometry(config.width, wallHeight, wallThickness), wallMaterial);
-      backWall.position.set(config.x, wallHeight / 2, config.z - halfDepth);
+      backWall.position.set(config.x, earthRadius + wallHeight / 2, config.z - halfDepth);
       scene.add(backWall);
       wallsInRoom.push(backWall);
 
       // Vordere Wand mit Tür
-      var doorWidth = 4;
+      var doorWidth = 8;
       var wall1Width = (config.width - doorWidth) / 2;
 
       var wall1 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
-      wall1.position.set(config.x - wall1Width / 2 - doorWidth / 2, wallHeight / 2, config.z + halfDepth);
+      wall1.position.set(config.x - wall1Width / 2 - doorWidth / 2, earthRadius + wallHeight / 2, config.z + halfDepth);
       scene.add(wall1);
       wallsInRoom.push(wall1);
 
       var wall2 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
-      wall2.position.set(config.x + wall1Width / 2 + doorWidth / 2, wallHeight / 2, config.z + halfDepth);
+      wall2.position.set(config.x + wall1Width / 2 + doorWidth / 2, earthRadius + wallHeight / 2, config.z + halfDepth);
       scene.add(wall2);
       wallsInRoom.push(wall2);
 
       // Tür
-      var door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, wallHeight, 0.2), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
-      door.position.set(config.x, wallHeight / 2, config.z + halfDepth + 0.1);
+      var door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, wallHeight, 0.5), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      door.position.set(config.x, earthRadius + wallHeight / 2, config.z + halfDepth + 0.25);
       door.name = config.name;
       door.open = false;
       scene.add(door);
@@ -449,19 +449,19 @@
       wallsInRoom.push(door); // Tür zur Kollisionserkennung hinzufügen
 
       // Türposition speichern
-      var doorPosition = new THREE.Vector3(config.x, 1, config.z + halfDepth);
+      var doorPosition = new THREE.Vector3(config.x, earthRadius + wallHeight / 2, config.z + halfDepth);
 
       // Türbeschriftung
       var loader = new THREE.FontLoader();
       loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
         var textGeometry = new THREE.TextGeometry(config.name, {
           font: font,
-          size: 0.7,
-          height: 0.1
+          size: 2,
+          height: 0.5
         });
         var textMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
         var textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.set(config.x - config.name.length * 0.35, wallHeight - 1, config.z + halfDepth + 0.5);
+        textMesh.position.set(config.x - config.name.length * 0.6, earthRadius + wallHeight - 2, config.z + halfDepth + 5);
         scene.add(textMesh);
       });
 
@@ -482,39 +482,39 @@
       });
 
       // Möbel hinzufügen
-      addFurnitureToRoom(room);
+      addFurnitureToRoom(room, wallHeight);
     }
 
-    function addFurnitureToRoom(room) {
+    function addFurnitureToRoom(room, wallHeight) {
       // Pflanzen hinzufügen
-      var plantGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+      var plantGeometry = new THREE.CylinderGeometry(1, 1, 4, 16);
       var plantMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
       var plant = new THREE.Mesh(plantGeometry, plantMaterial);
-      plant.position.set(room.minX + 2, 1, room.minZ + 2);
+      plant.position.set(room.minX + 5, earthRadius + 2, room.minZ + 5);
       scene.add(plant);
       walls.push(plant); // Für Kollisionserkennung
 
       // Tisch hinzufügen
-      var tableGeometry = new THREE.BoxGeometry(3, 0.5, 2);
+      var tableGeometry = new THREE.BoxGeometry(6, 1, 4);
       var tableMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
       var table = new THREE.Mesh(tableGeometry, tableMaterial);
-      table.position.set(room.maxX - 3, 0.25, room.maxZ - 3);
+      table.position.set(room.maxX - 6, earthRadius + 0.5, room.maxZ - 5);
       scene.add(table);
       walls.push(table);
 
       // Stuhl hinzufügen
-      var chairGeometry = new THREE.BoxGeometry(1, 1, 1);
+      var chairGeometry = new THREE.BoxGeometry(2, 2, 2);
       var chairMaterial = new THREE.MeshLambertMaterial({ color: 0xA0522D });
       var chair = new THREE.Mesh(chairGeometry, chairMaterial);
-      chair.position.set(room.maxX - 5, 0.5, room.maxZ - 3);
+      chair.position.set(room.maxX - 10, earthRadius + 1, room.maxZ - 5);
       scene.add(chair);
       walls.push(chair);
 
       // Bett hinzufügen
-      var bedGeometry = new THREE.BoxGeometry(2, 0.5, 4);
+      var bedGeometry = new THREE.BoxGeometry(4, 1, 8);
       var bedMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
       var bed = new THREE.Mesh(bedGeometry, bedMaterial);
-      bed.position.set(room.minX + 3, 0.25, room.maxZ - 3);
+      bed.position.set(room.minX + 6, earthRadius + 0.5, room.maxZ - 5);
       scene.add(bed);
       walls.push(bed);
     }
@@ -523,24 +523,24 @@
       // Begehbare Bereiche (Flure und offene Bereiche)
       waypoints = [
         // Flur vor den Räumen in der ersten Reihe
-        new THREE.Vector3(-30, 1, -15),
-        new THREE.Vector3(0, 1, -15),
-        new THREE.Vector3(35, 1, -15),
+        new THREE.Vector3(-150, earthRadius + 1, -150),
+        new THREE.Vector3(0, earthRadius + 1, -150),
+        new THREE.Vector3(175, earthRadius + 1, -150),
         // Flur vor den Räumen in der zweiten Reihe
-        new THREE.Vector3(-30, 1, 25),
-        new THREE.Vector3(10, 1, 25),
-        new THREE.Vector3(40, 1, 25),
+        new THREE.Vector3(-150, earthRadius + 1, 50),
+        new THREE.Vector3(50, earthRadius + 1, 50),
+        new THREE.Vector3(200, earthRadius + 1, 50),
         // Flur vor den Räumen in der dritten Reihe
-        new THREE.Vector3(-30, 1, 65),
-        new THREE.Vector3(0, 1, 65),
-        new THREE.Vector3(35, 1, 65),
+        new THREE.Vector3(-150, earthRadius + 1, 250),
+        new THREE.Vector3(0, earthRadius + 1, 250),
+        new THREE.Vector3(175, earthRadius + 1, 250),
         // Kreuzungen
-        new THREE.Vector3(-30, 1, 0),
-        new THREE.Vector3(0, 1, 0),
-        new THREE.Vector3(35, 1, 0),
-        new THREE.Vector3(-30, 1, 40),
-        new THREE.Vector3(0, 1, 40),
-        new THREE.Vector3(35, 1, 40)
+        new THREE.Vector3(-150, earthRadius + 1, 150),
+        new THREE.Vector3(0, earthRadius + 1, 150),
+        new THREE.Vector3(175, earthRadius + 1, 150),
+        new THREE.Vector3(-150, earthRadius + 1, 200),
+        new THREE.Vector3(0, earthRadius + 1, 200),
+        new THREE.Vector3(175, earthRadius + 1, 200)
       ];
     }
 
@@ -549,46 +549,47 @@
       nurse = new THREE.Group();
 
       // Körper
-      var bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
+      var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
       var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
       var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.position.y = 1;
+      body.position.y = 4;
       nurse.add(body);
 
       // Kopf
-      var headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      var headGeometry = new THREE.SphereGeometry(2, 16, 16);
       var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
       var head = new THREE.Mesh(headGeometry, headMaterial);
-      head.position.y = 2.75;
+      head.position.y = 8.75;
       nurse.add(head);
 
       // Arme
-      var armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+      var armGeometry = new THREE.BoxGeometry(1, 4, 1);
       var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
 
       var leftArm = new THREE.Mesh(armGeometry, armMaterial);
-      leftArm.position.set(-0.65, 1.5, 0);
+      leftArm.position.set(-2.5, 3, 0);
       nurse.add(leftArm);
       nurse.leftArm = leftArm;
 
       var rightArm = new THREE.Mesh(armGeometry, armMaterial);
-      rightArm.position.set(0.65, 1.5, 0);
+      rightArm.position.set(2.5, 3, 0);
       nurse.add(rightArm);
       nurse.rightArm = rightArm;
 
       // Beine
-      var legGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+      var legGeometry = new THREE.BoxGeometry(2, 4, 2);
       var legMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
 
       var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-      leftLeg.position.set(-0.25, 0.5, 0);
+      leftLeg.position.set(-1, 0.5, 0);
       nurse.add(leftLeg);
 
       var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-      rightLeg.position.set(0.25, 0.5, 0);
+      rightLeg.position.set(1, 0.5, 0);
       nurse.add(rightLeg);
 
-      nurse.position.set(0, 0, 0);
+      // Position der Spielerfigur auf der Erdoberfläche
+      nurse.position.set(0, 200 + 4, 0); // y = earthRadius + Körperhöhe / 2
       scene.add(nurse);
     }
 
@@ -648,7 +649,7 @@
       var npc = new THREE.Group();
 
       // Körper
-      var bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
+      var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
       var bodyMaterial;
       var symbol;
       switch(type) {
@@ -669,45 +670,48 @@
           symbol = '?';
       }
       var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.position.y = 1;
+      body.position.y = 4;
       npc.add(body);
 
       // Kopf
-      var headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      var headGeometry = new THREE.SphereGeometry(2, 16, 16);
       var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
       var head = new THREE.Mesh(headGeometry, headMaterial);
-      head.position.y = 2.75;
+      head.position.y = 8.75;
       npc.add(head);
 
       // Arme
-      var armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+      var armGeometry = new THREE.BoxGeometry(1, 4, 1);
       var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
 
       var leftArm = new THREE.Mesh(armGeometry, armMaterial);
-      leftArm.position.set(-0.65, 1.5, 0);
+      leftArm.position.set(-2.5, 3, 0);
       npc.add(leftArm);
       npc.leftArm = leftArm;
 
       var rightArm = new THREE.Mesh(armGeometry, armMaterial);
-      rightArm.position.set(0.65, 1.5, 0);
+      rightArm.position.set(2.5, 3, 0);
       npc.add(rightArm);
       npc.rightArm = rightArm;
 
       // Beine
-      var legGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+      var legGeometry = new THREE.BoxGeometry(2, 4, 2);
       var legMaterial = bodyMaterial;
 
       var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-      leftLeg.position.set(-0.25, 0.5, 0);
+      leftLeg.position.set(-1, 0.5, 0);
       npc.add(leftLeg);
 
       var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-      rightLeg.position.set(0.25, 0.5, 0);
+      rightLeg.position.set(1, 0.5, 0);
       npc.add(rightLeg);
 
       // NPC an zufälligem Wegpunkt platzieren
       var startWaypoint = waypoints[Math.floor(Math.random() * waypoints.length)];
       npc.position.copy(startWaypoint);
+
+      // Erhöhung der Y-Position, damit NPCs auf der Erdoberfläche stehen
+      npc.position.y = 200 + 4; // earthRadius + half of body height
 
       npc.name = data.name;
       npc.story = data.story;
@@ -720,12 +724,12 @@
 
       // Symbol über dem Kopf hinzufügen
       var spriteMaterial = new THREE.SpriteMaterial({
-        map: new THREE.CanvasTexture(generateTextCanvas(symbol, 64)),
+        map: new THREE.CanvasTexture(generateTextCanvas(symbol, 128)),
         depthTest: false
       });
       var sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.set(0, 3.5, 0);
-      sprite.scale.set(1.5, 1.5, 1);
+      sprite.position.set(0, 10, 0);
+      sprite.scale.set(5, 5, 1);
       npc.add(sprite);
 
       scene.add(npc);
@@ -786,7 +790,7 @@
       requestAnimationFrame(animate);
 
       // Bewegung der Krankenschwester
-      var speed = 0.3;
+      var speed = 1;
       var deltaX = 0;
       var deltaZ = 0;
       if (controls.moveForward) deltaZ -= speed;
@@ -808,9 +812,9 @@
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 60; // Angepasst für bessere Sicht
-      camera.position.y = nurse.position.y + 20; // Angepasst für bessere Sicht
-      camera.lookAt(nurse.position.x, nurse.position.y + 2, nurse.position.z);
+      camera.position.z = nurse.position.z + 300; // Angepasst für bessere Sicht
+      camera.position.y = nurse.position.y + 150; // Angepasst für bessere Sicht
+      camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
       updateTransparentWalls();
@@ -830,9 +834,9 @@
         var direction = new THREE.Vector3().subVectors(npc.targetPosition, npc.position);
         var distance = direction.length();
 
-        if (distance > 0.1) {
+        if (distance > 5) { // Halten Sie einen Mindestabstand zum Ziel
           direction.normalize();
-          var npcSpeed = 0.05;
+          var npcSpeed = 2;
           var deltaX_npc = direction.x * npcSpeed;
           var deltaZ_npc = direction.z * npcSpeed;
 
@@ -859,11 +863,11 @@
       // Interaktion mit NPCs
       npcs.forEach(function(npc) {
         var distanceToNurse = nurse.position.distanceTo(npc.position);
-        if (distanceToNurse < 3) {
+        if (distanceToNurse < 10) { // Erhöht für größere Szene
           if (!questionActive) {
             showQuestion(npc);
           }
-        } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 3) {
+        } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
           hideQuestion();
         }
       });
@@ -913,16 +917,16 @@
       doors.forEach(function(door) {
         var nurseDistance = nurse.position.distanceTo(door.position);
         var npcNear = npcs.some(function(npc) {
-          return npc.position.distanceTo(door.position) < 5;
+          return npc.position.distanceTo(door.position) < 20; // Erhöht für größere Szene
         });
 
-        if ((nurseDistance < 5 || npcNear) && !door.open) {
+        if ((nurseDistance < 20 || npcNear) && !door.open) {
           door.open = true;
           // Tür aus Szene und Kollisionserkennung entfernen
           scene.remove(door);
           var index = walls.indexOf(door);
           if (index > -1) walls.splice(index, 1);
-        } else if ((nurseDistance >= 5 && !npcNear) && door.open) {
+        } else if ((nurseDistance >= 20 && !npcNear) && door.open) {
           door.open = false;
           // Tür wieder zur Szene und Kollisionserkennung hinzufügen
           scene.add(door);
@@ -1090,13 +1094,13 @@
       // Berechne die neue Position der Sonne
       var x = sunRadius * Math.cos(angle);
       var y = sunRadius * Math.sin(angle);
-      var z = 50; // Sonne bleibt in der Front der Szene
+      var z = 300; // Sonne bleibt in der Front der Szene
 
       sun.position.set(x, y, z);
 
       // Aktualisiere die Position des Lichts entsprechend der Sonne
       directionalLight.position.set(x, y, z);
-      directionalLight.lookAt(0, 0, 0); // Licht auf die Szene ausrichten
+      directionalLight.lookAt(0, earthRadius, 0); // Licht auf die Erde ausrichten
 
       // Ändere die Intensität des Lichts basierend auf der Sonnenhöhe
       directionalLight.intensity = Math.max(0.2, y / sunRadius);
