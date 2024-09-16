@@ -3,27 +3,45 @@
     {
       "question": "Welche Behandlung ist am besten geeignet für Herzrhythmusstörungen?",
       "answers": [
-        "A. Medikamente",
-        "B. Physiotherapie",
-        "C. Operation"
+        "Medikamente",
+        "Herzschrittmacher",
+        "Diät und Bewegung"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "question": "Welche Behandlung ist am besten geeignet für Schlaganfall?",
+      "answers": [
+        "Physiotherapie",
+        "Thrombolyse",
+        "Blutverdünner"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "question": "Welche Behandlung ist am besten geeignet für Lungenkrebs?",
+      "answers": [
+        "Operation",
+        "Immuntherapie",
+        "Strahlentherapie"
       ],
       "correctAnswer": 3
     },
     {
-      "question": "Was ist die primäre Behandlungsmethode für einen Schlaganfall?",
+      "question": "Welche Behandlung ist am besten geeignet für Knochenbrüche?",
       "answers": [
-        "A. Thrombolyse",
-        "B. Diät und Bewegung",
-        "C. Schmerzmittel"
+        "Gipsverband",
+        "Schmerzmittel",
+        "Physiotherapie"
       ],
       "correctAnswer": 1
     },
     {
-      "question": "Welche Therapie ist am effektivsten bei Hautkrebs?",
+      "question": "Welche Behandlung ist am besten geeignet für Hautkrebs?",
       "answers": [
-        "A. Strahlentherapie",
-        "B. Chemotherapie",
-        "C. Chirurgische Entfernung"
+        "Laserbehandlung",
+        "Salben",
+        "Strahlentherapie"
       ],
       "correctAnswer": 3
     }
@@ -32,58 +50,47 @@
     {
       "question": "Was ist die wichtigste Pflegemaßnahme bei einem Patienten mit Bluthochdruck?",
       "answers": [
-        "A. Medikamentengabe überwachen",
-        "B. Flüssigkeitszufuhr sicherstellen",
-        "C. Blutdruck messen"
+        "Medikamentengabe überwachen",
+        "Flüssigkeitszufuhr sicherstellen",
+        "Blutdruck messen"
       ],
       "correctAnswer": 1
     },
     {
-      "question": "Welche Maßnahme ist entscheidend nach einer Operation?",
+      "question": "Was ist die wichtigste Pflegemaßnahme nach einer Operation?",
       "answers": [
-        "A. Wundpflege",
-        "B. Ernährung überwachen",
-        "C. Bewegung fördern"
+        "Wundpflege",
+        "Mobilisation unterstützen",
+        "Schmerzmanagement"
       ],
       "correctAnswer": 1
     },
     {
-      "question": "Was ist die wichtigste Pflege bei einem Patienten mit Fieber?",
+      "question": "Was ist die wichtigste Pflegemaßnahme bei Fieber?",
       "answers": [
-        "A. Temperatur messen",
-        "B. Schmerzmanagement",
-        "C. Flüssigkeitszufuhr erhöhen"
+        "Temperatur messen",
+        "Kühlung anwenden",
+        "Bettruhe gewährleisten"
       ],
       "correctAnswer": 1
-    }
-  ],
-  "patient": [
-    {
-      "question": "Ich habe Beschwerden wie Kopfschmerzen. Was sollte ich tun?",
-      "answers": [
-        "A. Schmerzmittel nehmen",
-        "B. Zum Arzt gehen",
-        "C. Abwarten"
-      ],
-      "correctAnswer": 2
     },
     {
-      "question": "Bei Magenproblemen sollte ich:",
+      "question": "Was ist die wichtigste Pflegemaßnahme während der Schwangerschaft?",
       "answers": [
-        "A. Fasten",
-        "B. Wärmeanwendungen nutzen",
-        "C. Zum Arzt gehen"
+        "Geburtsvorbereitung",
+        "Ernährungsberatung",
+        "Ultraschall durchführen"
       ],
-      "correctAnswer": 3
+      "correctAnswer": 1
     },
     {
-      "question": "Wenn ich Rückenschmerzen habe, sollte ich:",
+      "question": "Was ist die wichtigste Pflegemaßnahme bei Depression?",
       "answers": [
-        "A. Schmerzmittel nehmen",
-        "B. Physiotherapie beginnen",
-        "C. Viel schlafen"
+        "Gespräche führen",
+        "Medikation überwachen",
+        "Bewegung fördern"
       ],
-      "correctAnswer": 2
+      "correctAnswer": 1
     }
   ]
 }
