@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Patient 0</title>
+  <title>Krankenhausabenteuer</title>
   <!-- Google Fonts hinzufügen -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -83,13 +83,14 @@
     #hud {
       position: absolute;
       top: 10px;
-      left: 10px;
+      right: 10px; /* Highscore rechts oben */
       color: white;
       font-size: 18px;
       z-index: 5;
       background-color: rgba(0, 0, 0, 0.5);
       padding: 10px;
       border-radius: 5px;
+      text-align: right;
     }
 
     #message {
@@ -182,7 +183,7 @@
       <li><strong>D</strong> - Nach rechts bewegen</li>
     </ul>
     <p>Ziel des Spiels:</p>
-    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Pflegepunkte, bevor der Timer abläuft!</p>
+    <p>Interagieren Sie mit den NPCs, beantworten Sie ihre Fragen und heilen Sie Patienten. Behalten Sie Ihre Pflegepunkte im Auge und erreichen Sie einen hohen Highscore!</p>
     <button onclick="startGame()">Spiel starten</button>
   </div>
 
@@ -229,7 +230,7 @@
     var patients = [];
     var patientWave = 1; // Startwelle
     var nextPatientSpawnTime = 0; // Nächste Spawn-Zeit
-    var patientSpawnInterval = 30000; // 30 Sekunden in Millisekunden
+    var patientSpawnInterval = 10000; // 10 Sekunden in Millisekunden
 
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
@@ -241,6 +242,10 @@
     // Neue Variablen für das Punktesystem
     var carePoints = 100; // Startpflegepunkte
     var highscore = 0; // Highscore
+
+    // Variablen für Fragenüberprüfung pro Minute
+    var questionsAnsweredInLastMinute = 0;
+    var questionCheckInterval = 60000; // 1 Minute in Millisekunden
 
     // Funktion zum Laden der Fragen aus der JSON-Datei auf GitHub
     async function loadQuestions() {
@@ -293,6 +298,7 @@
       startTimer();
       spawnInitialPatient(); // Erster Patient spawnt beim Spielstart
       scheduleNextPatientWave(); // Planung der nächsten Patient Welle
+      startQuestionCheck(); // Start der Überprüfung der Fragen pro Minute
     }
 
     function init() {
@@ -1043,6 +1049,7 @@
       if (choice === questionData.correctAnswer) {
         message = "Antwort ist richtig.";
         carePoints += 50; // Pflegepunkte erhöhen
+        questionsAnsweredInLastMinute += 1; // Fragenüberprüfung aktualisieren
       } else {
         message = "Antwort ist leider falsch.";
         // Nur bei richtiger Antwort Punkte erhalten, keine Abzüge
@@ -1064,16 +1071,12 @@
       if (highscore >= 10) { // Beispiel: Spieler gewinnt bei 10 geheilten Patienten
         endGame(true);
       }
-
-      // Optionale Überprüfung, wenn Pflegepunkte überschritten werden (optional)
-      // if (carePoints >= 1000) {
-      //   endGame(true);
-      // }
     }
 
     function endGame(won) {
       gameEnded = true;
       clearInterval(timerInterval);
+      clearInterval(questionCheckIntervalId);
       var endScreen = document.getElementById('endScreen');
       var endMessage = document.getElementById('endMessage');
       if (won) {
@@ -1247,12 +1250,25 @@
 
     // Funktion zum Planen der nächsten Patientenwelle
     function scheduleNextPatientWave() {
-      // Zufällige Verzögerung nach 30 Sekunden
-      var randomDelay = Math.random() * 30000; // Bis zu 30 Sekunden zusätzlich
-      nextPatientSpawnTime = Date.now() + patientSpawnInterval + randomDelay;
+      // Spawnt nach patientSpawnInterval (10 Sekunden)
+      nextPatientSpawnTime = Date.now() + patientSpawnInterval;
     }
 
-    // --- Ende der neuen Funktionen für Patientenmanagement ---
+    // Funktion zur Überprüfung, ob der Spieler genügend Fragen beantwortet hat
+    function startQuestionCheck() {
+      questionCheckIntervalId = setInterval(function() {
+        if (questionsAnsweredInLastMinute < 1) {
+          // Spieler hat keine Fragen beantwortet, erhöhe Spawnrate
+          patientSpawnInterval = Math.max(2000, patientSpawnInterval - 1000); // Minimum 2 Sekunden
+          showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen schneller.");
+        } else {
+          // Spieler hat Fragen beantwortet, halte Spawnrate
+          patientSpawnInterval = 10000; // Zurück auf 10 Sekunden
+        }
+        // Reset für die nächste Minute
+        questionsAnsweredInLastMinute = 0;
+      }, questionCheckInterval);
+    }
 
     // Funktion zur Heilung eines Patienten
     function healPatient(patient) {
@@ -1299,6 +1315,9 @@
 
       animateHealing();
     }
+
+    // --- Ende der neuen Funktionen für Patientenmanagement ---
+
   </script>
 </body>
 </html>
