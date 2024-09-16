@@ -215,6 +215,12 @@
     var gameEnded = false;
     var waypoints = []; // Wegpunkte für die NPC-Bewegung
 
+    // Neue Variablen für Patientenmanagement
+    var patients = [];
+    var patientWave = 1; // Startwelle
+    var nextPatientSpawnTime = 0; // Nächste Spawn-Zeit
+    var patientSpawnInterval = 30000; // 30 Sekunden in Millisekunden
+
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
       doctor: [],
@@ -271,6 +277,8 @@
       init();
       animate();
       startTimer();
+      spawnInitialPatient(); // Erster Patient spawnt beim Spielstart
+      scheduleNextPatientWave(); // Planung der nächsten Patient Welle
     }
 
     function init() {
@@ -867,6 +875,9 @@
         }
       });
 
+      // Patientenmanagement: Überprüfen, ob neue Patienten gespawnt werden sollen
+      handlePatientSpawning();
+
       renderer.render(scene, camera);
     }
 
@@ -1069,6 +1080,189 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       }
     });
+
+    // --- Neue Funktionen für Patientenmanagement ---
+
+    // Funktion zum Spawn des ersten Patienten
+    function spawnInitialPatient() {
+      var position = getRandomGroundPosition();
+      if (position) {
+        markSpawnLocation(position);
+        var patientData = generatePatientData();
+        createPatient(patientData, position);
+      }
+    }
+
+    // Funktion zum Markieren des Spawn-Ortes mit einem weißen 'H'
+    function markSpawnLocation(position) {
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.CanvasTexture(generateTextCanvas('H', 128)),
+        transparent: true
+      });
+      var sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.set(position.x, 5, position.z); // leicht über dem Boden
+      sprite.scale.set(20, 20, 1);
+      scene.add(sprite);
+    }
+
+    // Funktion zum Generieren von Patientendaten
+    function generatePatientData() {
+      var index = patients.length;
+      var data = {
+        idNumber: 'patient_' + index,
+        type: 'patient_custom',
+        name: 'Patient ' + (index + 1),
+        story: 'Hallo, ich bin Patient ' + (index + 1) + '.'
+      };
+      return data;
+    }
+
+    // Funktion zum Erstellen eines Patienten
+    function createPatient(type, position) {
+      var npc = new THREE.Group();
+
+      // Körper
+      var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
+      var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+      var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 4;
+      npc.add(body);
+
+      // Kopf
+      var headGeometry = new THREE.SphereGeometry(2, 16, 16);
+      var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+      var head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 8.75;
+      npc.add(head);
+
+      // Arme
+      var armGeometry = new THREE.BoxGeometry(1, 4, 1);
+      var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+
+      var leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-2.5, 3, 0);
+      npc.add(leftArm);
+      npc.leftArm = leftArm;
+
+      var rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(2.5, 3, 0);
+      npc.add(rightArm);
+      npc.rightArm = rightArm;
+
+      // Beine
+      var legGeometry = new THREE.BoxGeometry(2, 4, 2);
+      var legMaterial = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+
+      var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-1, 0.5, 0);
+      npc.add(leftLeg);
+
+      var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(1, 0.5, 0);
+      npc.add(rightLeg);
+
+      // Position setzen
+      npc.position.copy(position);
+      npc.position.y = 4; // y = Bodenhöhe + halbe Höhe des Körpers
+
+      npc.name = type.name;
+      npc.story = type.story;
+      npc.type = type.type;
+      npc.targetPosition = null;
+      npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
+
+      // Symbol über dem Kopf hinzufügen
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.CanvasTexture(generateTextCanvas('P', 128)),
+        transparent: true
+      });
+      var sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.set(0, 10, 0);
+      sprite.scale.set(10, 10, 1);
+      npc.add(sprite);
+
+      scene.add(npc);
+      patients.push(npc);
+      npcs.push(npc); // Optional: Wenn Patienten Teil der allgemeinen NPC-Liste sein sollen
+    }
+
+    // Funktion zum Generieren einer zufälligen Position auf dem Boden außerhalb der Gebäude
+    function getRandomGroundPosition() {
+      var maxAttempts = 100;
+      for (var i = 0; i < maxAttempts; i++) {
+        var x = (Math.random() - 0.5) * 2000; // Boden ist 2000x2000
+        var z = (Math.random() - 0.5) * 2000;
+        if (isPositionValid(x, z)) {
+          return new THREE.Vector3(x, 0, z);
+        }
+      }
+      console.warn('Keine gültige Position für den Patienten gefunden.');
+      return null;
+    }
+
+    // Funktion zur Überprüfung, ob eine Position außerhalb aller Gebäude liegt
+    function isPositionValid(x, z) {
+      for (var i = 0; i < rooms.length; i++) {
+        var room = rooms[i];
+        if (x > room.minX && x < room.maxX && z > room.minZ && z < room.maxZ) {
+          return false; // Position liegt innerhalb eines Gebäudes
+        }
+      }
+      return true; // Position liegt außerhalb aller Gebäude
+    }
+
+    // Funktion zum Behandeln des Patienten-Spawns
+    function handlePatientSpawning() {
+      var currentTime = Date.now();
+      if (currentTime >= nextPatientSpawnTime) {
+        // Anzahl der Patienten pro Welle entspricht der aktuellen Wellenzahl
+        for (var i = 0; i < patientWave; i++) {
+          spawnPatient();
+        }
+        patientWave++;
+        scheduleNextPatientWave();
+      }
+    }
+
+    // Funktion zum Spawn eines einzelnen Patienten
+    function spawnPatient() {
+      var position = getRandomGroundPosition();
+      if (position) {
+        createPatient(generatePatientData(), position);
+      }
+    }
+
+    // Funktion zum Planen der nächsten Patientenwelle
+    function scheduleNextPatientWave() {
+      // Zufällige Verzögerung nach 30 Sekunden
+      var randomDelay = Math.random() * 30000; // Bis zu 30 Sekunden zusätzlich
+      nextPatientSpawnTime = Date.now() + patientSpawnInterval + randomDelay;
+    }
+
+    // Funktion zum Spawn des ersten Patienten mit Markierung
+    function spawnInitialPatient() {
+      var position = getRandomGroundPosition();
+      if (position) {
+        markSpawnLocation(position);
+        var patientData = generatePatientData();
+        createPatient(patientData, position);
+      }
+    }
+
+    // Funktion zum Markieren des Spawn-Ortes mit einem weißen 'H'
+    function markSpawnLocation(position) {
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.CanvasTexture(generateTextCanvas('H', 128)),
+        transparent: true
+      });
+      var sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.set(position.x, 5, position.z); // leicht über dem Boden
+      sprite.scale.set(20, 20, 1);
+      scene.add(sprite);
+    }
+
+    // --- Ende der neuen Funktionen für Patientenmanagement ---
+
   </script>
 </body>
 </html>
