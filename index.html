@@ -738,6 +738,8 @@
       npc.targetPosition = null;
       npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
       npc.questionsAsked = 0; // Anzahl der gestellten Fragen
+      npc.cooldownActive = false; // Cooldown ist nicht aktiv
+      npc.cooldownStartTime = 0; // Zeitpunkt des Cooldowns
 
       // Symbol über dem Kopf hinzufügen
       var spriteMaterial = new THREE.SpriteMaterial({
@@ -882,7 +884,22 @@
         var distanceToNurse = nurse.position.distanceTo(npc.position);
         if (distanceToNurse < 10) { // Erhöht für größere Szene
           if (!questionActive && npc.type !== 'patient') {
-            showQuestion(npc);
+            // Überprüfen, ob NPC sich im Cooldown befindet
+            if (npc.cooldownActive) {
+              var currentTime = Date.now();
+              if (currentTime - npc.cooldownStartTime >= 60000) { // 1 Minute in ms
+                // Cooldown beendet
+                npc.cooldownActive = false;
+                npc.questionsAsked = 0;
+                showQuestion(npc);
+              } else {
+                // Cooldown noch aktiv
+                var remainingTime = Math.ceil((60000 - (currentTime - npc.cooldownStartTime)) / 1000);
+                showMessage(`${npc.name} kann bald wieder Fragen stellen. (${remainingTime} Sekunden verbleibend)`);
+              }
+            } else {
+              showQuestion(npc);
+            }
           }
         } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
           hideQuestion();
@@ -894,8 +911,7 @@
         }
       });
 
-      // Patientenmanagement: Überprüfen, ob neue Patienten gespawnt werden sollen
-      // Dies ist nun durch das kontinuierliche Spawnsystem abgedeckt
+      renderer.render(scene, camera);
     }
 
     function animateArms(object, isMoving) {
@@ -987,7 +1003,10 @@
 
       // Überprüfen, ob der NPC noch Fragen hat
       if (npc.questionsAsked >= 3) {
-        showMessage(npc.name + ': "Vielen Dank für Ihre Hilfe!"');
+        // Starten Sie den Cooldown
+        npc.cooldownActive = true;
+        npc.cooldownStartTime = Date.now();
+        showMessage(`${npc.name} benötigt eine Pause. Kann in 1 Minute wieder Fragen stellen.`);
         npc.isPaused = false;
         questionActive = false;
         currentNPC = null;
@@ -1003,7 +1022,7 @@
       var remainingQuestions = npc.questions.filter((q, index) => !answeredQuestions[npcKey].includes(index));
 
       if (remainingQuestions.length === 0) {
-        showMessage(npc.name + ': "Vielen Dank für Ihre Hilfe!"');
+        showMessage(`${npc.name}: "Vielen Dank für Ihre Hilfe!"`);
         npc.isPaused = false;
         questionActive = false;
         currentNPC = null;
@@ -1191,6 +1210,8 @@
       npc.targetPosition = null;
       npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
       npc.questionsAsked = 0; // Anzahl der gestellten Fragen
+      npc.cooldownActive = false; // Cooldown ist nicht aktiv
+      npc.cooldownStartTime = 0; // Zeitpunkt des Cooldowns
       npc.isHealed = false; // Flag für geheilten Patienten
 
       // Symbol über dem Kopf hinzufügen
@@ -1234,11 +1255,6 @@
     }
 
     // Funktion zum Starten des kontinuierlichen Patienten-Spawns
-    function startContinuousPatientSpawning() {
-      spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
-    }
-
-    // Funktion zum kontinuierlichen Spawnen von Patienten mit dynamischer Anpassung der Spawnrate
     function startContinuousPatientSpawning() {
       spawnIntervalId = setInterval(function() {
         spawnPatient();
@@ -1428,7 +1444,22 @@
         var distanceToNurse = nurse.position.distanceTo(npc.position);
         if (distanceToNurse < 10) { // Erhöht für größere Szene
           if (!questionActive && npc.type !== 'patient') {
-            showQuestion(npc);
+            // Überprüfen, ob NPC sich im Cooldown befindet
+            if (npc.cooldownActive) {
+              var currentTime = Date.now();
+              if (currentTime - npc.cooldownStartTime >= 60000) { // 1 Minute in ms
+                // Cooldown beendet
+                npc.cooldownActive = false;
+                npc.questionsAsked = 0;
+                showQuestion(npc);
+              } else {
+                // Cooldown noch aktiv
+                var remainingTime = Math.ceil((60000 - (currentTime - npc.cooldownStartTime)) / 1000);
+                showMessage(`${npc.name} kann bald wieder Fragen stellen. (${remainingTime} Sekunden verbleibend)`);
+              }
+            } else {
+              showQuestion(npc);
+            }
           }
         } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
           hideQuestion();
@@ -1442,6 +1473,8 @@
 
       renderer.render(scene, camera);
     }
+
+    // Hinweis: Der ursprüngliche animate() Loop wurde bereits oben überschrieben.
 
   </script>
 </body>
