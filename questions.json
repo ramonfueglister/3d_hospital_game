@@ -1,0 +1,92 @@
+{
+  "doctor": [
+    {
+      "question": "Welche Behandlung ist am besten geeignet für Herzrhythmusstörungen?",
+      "answers": [
+        "A. Medikamente",
+        "B. Physiotherapie",
+        "C. Operation"
+      ],
+      "correctAnswer": 3
+    },
+    {
+      "question": "Was ist die primäre Behandlungsmethode für einen Schlaganfall?",
+      "answers": [
+        "A. Thrombolyse",
+        "B. Diät und Bewegung",
+        "C. Schmerzmittel"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "question": "Welche Therapie ist am effektivsten bei Hautkrebs?",
+      "answers": [
+        "A. Strahlentherapie",
+        "B. Chemotherapie",
+        "C. Chirurgische Entfernung"
+      ],
+      "correctAnswer": 3
+    }
+    // Weitere Arztfragen...
+  ],
+  "nurse": [
+    {
+      "question": "Was ist die wichtigste Pflegemaßnahme bei einem Patienten mit Bluthochdruck?",
+      "answers": [
+        "A. Medikamentengabe überwachen",
+        "B. Flüssigkeitszufuhr sicherstellen",
+        "C. Blutdruck messen"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "question": "Welche Maßnahme ist entscheidend nach einer Operation?",
+      "answers": [
+        "A. Wundpflege",
+        "B. Ernährung überwachen",
+        "C. Bewegung fördern"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "question": "Was ist die wichtigste Pflege bei einem Patienten mit Fieber?",
+      "answers": [
+        "A. Temperatur messen",
+        "B. Schmerzmanagement",
+        "C. Flüssigkeitszufuhr erhöhen"
+      ],
+      "correctAnswer": 1
+    }
+    // Weitere Pflegefragen...
+  ],
+  "patient": [
+    {
+      "question": "Ich habe Beschwerden wie Kopfschmerzen. Was sollte ich tun?",
+      "answers": [
+        "A. Schmerzmittel nehmen",
+        "B. Zum Arzt gehen",
+        "C. Abwarten"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "question": "Bei Magenproblemen sollte ich:",
+      "answers": [
+        "A. Fasten",
+        "B. Wärmeanwendungen nutzen",
+        "C. Zum Arzt gehen"
+      ],
+      "correctAnswer": 3
+    },
+    {
+      "question": "Wenn ich Rückenschmerzen habe, sollte ich:",
+      "answers": [
+        "A. Schmerzmittel nehmen",
+        "B. Physiotherapie beginnen",
+        "C. Viel schlafen"
+      ],
+      "correctAnswer": 2
+    }
+    // Weitere Patientenfragen...
+  ]
+}
