@@ -219,7 +219,7 @@
     var sun;
     var directionalLight;
     var gameStartTime;
-    var sunRadius = 300; // Angepasster Radius der Sonnenbahn für größere Erde
+    var sunRadius = 300; // Radius der Sonnenbahn
 
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
@@ -282,6 +282,8 @@
 
     function init() {
       scene = new THREE.Scene();
+      
+      // Kamera erstellen
       camera = new THREE.PerspectiveCamera(
         75, window.innerWidth / window.innerHeight, 0.1, 1000
       );
@@ -295,20 +297,15 @@
       scene.add(ambientLight);
       
       directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-      directionalLight.position.set(0, 300, 300); // Anfangsposition angepasst
+      directionalLight.position.set(100, 300, 100); // Position der Lichtquelle
       directionalLight.castShadow = true;
       scene.add(directionalLight);
 
+      // Boden hinzufügen
+      createGround();
+
       // Himmel hinzufügen
       createSky();
-
-      // Erde als Boden hinzufügen (statt der grünen Plane)
-      var earthRadius = 200; // Angepasster Radius für größere Erde
-      var earthMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22, side: THREE.FrontSide });
-      var earthGeometry = new THREE.SphereGeometry(earthRadius, 64, 64);
-      var earth = new THREE.Mesh(earthGeometry, earthMaterial);
-      earth.position.set(0, earthRadius, 0); // So dass die untere Hälfte der Kugel auf y=0 liegt
-      scene.add(earth);
 
       // Krankenhaus erstellen
       createHospital();
@@ -316,18 +313,18 @@
       // Wegpunkte erstellen
       createWaypoints();
 
-      // Spielerfigur verbessern
+      // Spielerfigur erstellen
       createPlayer();
 
       // NPCs erstellen
       createNPCPool();
       selectRandomNPCs();
 
-      // Kameraposition
-      camera.position.set(0, earthRadius + 100, earthRadius + 150); // Angepasste Kameraposition für bessere Sicht
-      camera.lookAt(nurse.position);
+      // Kameraposition einstellen
+      camera.position.set(0, 150, 300); // Angepasste Kameraposition für bessere Sicht
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-      // Steuerung
+      // Steuerung initialisieren
       controls = {
         moveForward: false,
         moveBackward: false,
@@ -341,6 +338,18 @@
       gameStarted = true;
     }
 
+    function createGround() {
+      var groundGeometry = new THREE.PlaneGeometry(2000, 2000);
+      var groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 }); // Grün für den Boden
+      var ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2; // Ebene horizontal ausrichten
+      ground.position.y = 0;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      walls.push(ground); // Für Kollisionserkennung
+    }
+
     function createSky() {
       var skyGeometry = new THREE.SphereGeometry(1000, 64, 64);
       var skyMaterial = new THREE.MeshBasicMaterial({
@@ -351,10 +360,10 @@
       scene.add(sky);
 
       // Sonne hinzufügen
-      var sunGeometry = new THREE.SphereGeometry(10, 32, 32);
+      var sunGeometry = new THREE.SphereGeometry(20, 32, 32);
       var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       sun = new THREE.Mesh(sunGeometry, sunMaterial);
-      sun.position.set(0, -sunRadius, 300); // Anfangsposition (unter dem Horizont)
+      sun.position.set(300, 300, -300); // Anfangsposition (im Himmel)
       scene.add(sun);
     }
 
@@ -379,13 +388,13 @@
       var roomConfigs = [
         { x: -150, z: -150, width: 40, depth: 60, name: 'Notaufnahme', color: 0xffcccc },
         { x: 0, z: -150, width: 60, depth: 60, name: 'Wartezimmer', color: 0xccffcc },
-        { x: 175, z: -150, width: 60, depth: 60, name: 'Radiologie', color: 0xccccff },
+        { x: 150, z: -150, width: 60, depth: 60, name: 'Radiologie', color: 0xccccff },
         { x: -150, z: 50, width: 60, depth: 60, name: 'Intensivstation', color: 0xffffcc },
         { x: 50, z: 50, width: 80, depth: 60, name: 'Allgemeine Station', color: 0xffccff },
         { x: 200, z: 50, width: 40, depth: 60, name: 'Operationssaal', color: 0xccffff },
         { x: -150, z: 250, width: 40, depth: 60, name: 'Apotheke', color: 0xffe4b5 },
         { x: 0, z: 250, width: 60, depth: 60, name: 'Labor', color: 0xd3d3d3 },
-        { x: 175, z: 250, width: 60, depth: 60, name: 'Personalraum', color: 0xadd8e6 }
+        { x: 150, z: 250, width: 60, depth: 60, name: 'Personalraum', color: 0xadd8e6 }
       ];
 
       roomConfigs.forEach(function(config) {
@@ -409,19 +418,19 @@
 
       // Linke Wand
       var leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
-      leftWall.position.set(config.x - halfWidth, earthRadius + wallHeight / 2, config.z);
+      leftWall.position.set(config.x - halfWidth, wallHeight / 2, config.z);
       scene.add(leftWall);
       wallsInRoom.push(leftWall);
 
       // Rechte Wand
       var rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
-      rightWall.position.set(config.x + halfWidth, earthRadius + wallHeight / 2, config.z);
+      rightWall.position.set(config.x + halfWidth, wallHeight / 2, config.z);
       scene.add(rightWall);
       wallsInRoom.push(rightWall);
 
       // Hintere Wand
       var backWall = new THREE.Mesh(new THREE.BoxGeometry(config.width, wallHeight, wallThickness), wallMaterial);
-      backWall.position.set(config.x, earthRadius + wallHeight / 2, config.z - halfDepth);
+      backWall.position.set(config.x, wallHeight / 2, config.z - halfDepth);
       scene.add(backWall);
       wallsInRoom.push(backWall);
 
@@ -430,18 +439,18 @@
       var wall1Width = (config.width - doorWidth) / 2;
 
       var wall1 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
-      wall1.position.set(config.x - wall1Width / 2 - doorWidth / 2, earthRadius + wallHeight / 2, config.z + halfDepth);
+      wall1.position.set(config.x - wall1Width / 2 - doorWidth / 2, wallHeight / 2, config.z + halfDepth);
       scene.add(wall1);
       wallsInRoom.push(wall1);
 
       var wall2 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
-      wall2.position.set(config.x + wall1Width / 2 + doorWidth / 2, earthRadius + wallHeight / 2, config.z + halfDepth);
+      wall2.position.set(config.x + wall1Width / 2 + doorWidth / 2, wallHeight / 2, config.z + halfDepth);
       scene.add(wall2);
       wallsInRoom.push(wall2);
 
       // Tür
       var door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, wallHeight, 0.5), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
-      door.position.set(config.x, earthRadius + wallHeight / 2, config.z + halfDepth + 0.25);
+      door.position.set(config.x, wallHeight / 2, config.z + halfDepth + 0.25);
       door.name = config.name;
       door.open = false;
       scene.add(door);
@@ -449,7 +458,7 @@
       wallsInRoom.push(door); // Tür zur Kollisionserkennung hinzufügen
 
       // Türposition speichern
-      var doorPosition = new THREE.Vector3(config.x, earthRadius + wallHeight / 2, config.z + halfDepth);
+      var doorPosition = new THREE.Vector3(config.x, wallHeight / 2, config.z + halfDepth);
 
       // Türbeschriftung
       var loader = new THREE.FontLoader();
@@ -461,7 +470,7 @@
         });
         var textMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
         var textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.set(config.x - config.name.length * 0.6, earthRadius + wallHeight - 2, config.z + halfDepth + 5);
+        textMesh.position.set(config.x - config.name.length * 0.6, wallHeight + 2, config.z + halfDepth + 5);
         scene.add(textMesh);
       });
 
@@ -490,7 +499,7 @@
       var plantGeometry = new THREE.CylinderGeometry(1, 1, 4, 16);
       var plantMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
       var plant = new THREE.Mesh(plantGeometry, plantMaterial);
-      plant.position.set(room.minX + 5, earthRadius + 2, room.minZ + 5);
+      plant.position.set(room.minX + 5, 2, room.minZ + 5);
       scene.add(plant);
       walls.push(plant); // Für Kollisionserkennung
 
@@ -498,7 +507,7 @@
       var tableGeometry = new THREE.BoxGeometry(6, 1, 4);
       var tableMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
       var table = new THREE.Mesh(tableGeometry, tableMaterial);
-      table.position.set(room.maxX - 6, earthRadius + 0.5, room.maxZ - 5);
+      table.position.set(room.maxX - 6, 0.5, room.maxZ - 5);
       scene.add(table);
       walls.push(table);
 
@@ -506,7 +515,7 @@
       var chairGeometry = new THREE.BoxGeometry(2, 2, 2);
       var chairMaterial = new THREE.MeshLambertMaterial({ color: 0xA0522D });
       var chair = new THREE.Mesh(chairGeometry, chairMaterial);
-      chair.position.set(room.maxX - 10, earthRadius + 1, room.maxZ - 5);
+      chair.position.set(room.maxX - 10, 1, room.maxZ - 5);
       scene.add(chair);
       walls.push(chair);
 
@@ -514,7 +523,7 @@
       var bedGeometry = new THREE.BoxGeometry(4, 1, 8);
       var bedMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
       var bed = new THREE.Mesh(bedGeometry, bedMaterial);
-      bed.position.set(room.minX + 6, earthRadius + 0.5, room.maxZ - 5);
+      bed.position.set(room.minX + 6, 0.5, room.maxZ - 5);
       scene.add(bed);
       walls.push(bed);
     }
@@ -523,29 +532,29 @@
       // Begehbare Bereiche (Flure und offene Bereiche)
       waypoints = [
         // Flur vor den Räumen in der ersten Reihe
-        new THREE.Vector3(-150, earthRadius + 1, -150),
-        new THREE.Vector3(0, earthRadius + 1, -150),
-        new THREE.Vector3(175, earthRadius + 1, -150),
+        new THREE.Vector3(-150, 1, -150),
+        new THREE.Vector3(0, 1, -150),
+        new THREE.Vector3(150, 1, -150),
         // Flur vor den Räumen in der zweiten Reihe
-        new THREE.Vector3(-150, earthRadius + 1, 50),
-        new THREE.Vector3(50, earthRadius + 1, 50),
-        new THREE.Vector3(200, earthRadius + 1, 50),
+        new THREE.Vector3(-150, 1, 50),
+        new THREE.Vector3(50, 1, 50),
+        new THREE.Vector3(200, 1, 50),
         // Flur vor den Räumen in der dritten Reihe
-        new THREE.Vector3(-150, earthRadius + 1, 250),
-        new THREE.Vector3(0, earthRadius + 1, 250),
-        new THREE.Vector3(175, earthRadius + 1, 250),
+        new THREE.Vector3(-150, 1, 250),
+        new THREE.Vector3(0, 1, 250),
+        new THREE.Vector3(150, 1, 250),
         // Kreuzungen
-        new THREE.Vector3(-150, earthRadius + 1, 150),
-        new THREE.Vector3(0, earthRadius + 1, 150),
-        new THREE.Vector3(175, earthRadius + 1, 150),
-        new THREE.Vector3(-150, earthRadius + 1, 200),
-        new THREE.Vector3(0, earthRadius + 1, 200),
-        new THREE.Vector3(175, earthRadius + 1, 200)
+        new THREE.Vector3(-150, 1, 150),
+        new THREE.Vector3(0, 1, 150),
+        new THREE.Vector3(150, 1, 150),
+        new THREE.Vector3(-150, 1, 200),
+        new THREE.Vector3(0, 1, 200),
+        new THREE.Vector3(150, 1, 200)
       ];
     }
 
     function createPlayer() {
-      // Spielerfigur verbessern
+      // Spielerfigur erstellen
       nurse = new THREE.Group();
 
       // Körper
@@ -588,8 +597,8 @@
       rightLeg.position.set(1, 0.5, 0);
       nurse.add(rightLeg);
 
-      // Position der Spielerfigur auf der Erdoberfläche
-      nurse.position.set(0, 200 + 4, 0); // y = earthRadius + Körperhöhe / 2
+      // Position der Spielerfigur auf der Bodenfläche
+      nurse.position.set(0, 4, 0); // y = halbe Höhe des Körpers
       scene.add(nurse);
     }
 
@@ -710,8 +719,8 @@
       var startWaypoint = waypoints[Math.floor(Math.random() * waypoints.length)];
       npc.position.copy(startWaypoint);
 
-      // Erhöhung der Y-Position, damit NPCs auf der Erdoberfläche stehen
-      npc.position.y = 200 + 4; // earthRadius + half of body height
+      // Erhöhung der Y-Position, damit NPCs auf dem Boden stehen
+      npc.position.y = 4; // y = Bodenhöhe + halbe Höhe des Körpers
 
       npc.name = data.name;
       npc.story = data.story;
@@ -813,7 +822,7 @@
       // Kamera folgen
       camera.position.x = nurse.position.x;
       camera.position.z = nurse.position.z + 300; // Angepasst für bessere Sicht
-      camera.position.y = nurse.position.y + 150; // Angepasst für bessere Sicht
+      camera.position.y = 150; // Festes Y-Level für stabile Ansicht
       camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
@@ -1100,7 +1109,7 @@
 
       // Aktualisiere die Position des Lichts entsprechend der Sonne
       directionalLight.position.set(x, y, z);
-      directionalLight.lookAt(0, earthRadius, 0); // Licht auf die Erde ausrichten
+      directionalLight.lookAt(0, 0, 0); // Licht auf die Szene ausrichten
 
       // Ändere die Intensität des Lichts basierend auf der Sonnenhöhe
       directionalLight.intensity = Math.max(0.2, y / sunRadius);
