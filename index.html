@@ -234,8 +234,7 @@
 
     // Neue Variablen für Patientenmanagement
     var patients = [];
-    var nextPatientSpawnTime = 0; // Nächste Spawn-Zeit
-    var patientSpawnInterval = 10000; // 10 Sekunden in Millisekunden
+    var patientSpawnInterval = 5000; // Startintervall 5 Sekunden in Millisekunden
     var spawnIntervalId;
     var questionCheckIntervalId;
 
@@ -252,7 +251,7 @@
 
     // Variablen für Fragenüberprüfung pro Minute
     var questionsAnsweredInLastMinute = 0;
-    var questionCheckInterval = 60000; // 1 Minute in Millisekunden
+    var questionCheckIntervalTime = 60000; // 1 Minute in Millisekunden
 
     // Funktion zum Laden der Fragen aus der JSON-Datei auf GitHub
     async function loadQuestions() {
@@ -1133,6 +1132,7 @@
         markSpawnLocation(position);
         var patientData = generatePatientData();
         createPatient(patientData, position);
+        console.log('Initialer Patient gespawnt:', patientData.name, position);
       }
     }
 
@@ -1231,6 +1231,7 @@
       scene.add(npc);
       patients.push(npc);
       npcs.push(npc); // Patienten sind auch Teil der NPC-Liste
+      console.log('Neuer Patient gespawnt:', data.name, position);
     }
 
     // Funktion zum Generieren einer zufälligen Position auf dem Boden außerhalb der Gebäude
@@ -1262,12 +1263,8 @@
     function startContinuousPatientSpawning() {
       spawnIntervalId = setInterval(function() {
         spawnPatient();
-        // Optionale Anpassung der Spawnrate im Verlauf des Spiels
-        // Zum Beispiel alle 2 Minuten die Spawnrate leicht erhöhen
-        if (timer % 120 === 0 && timer > 0) {
-          adjustSpawnRate();
-        }
       }, patientSpawnInterval);
+      console.log('Kontinuierliches Patienten-Spawning gestartet alle ' + patientSpawnInterval/1000 + ' Sekunden.');
     }
 
     // Funktion zum Anpassen der Spawnrate basierend auf der Spielerleistung
@@ -1278,12 +1275,14 @@
         clearInterval(spawnIntervalId);
         spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
         showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen jetzt schneller.");
+        console.log('Spawn-Intervall auf ' + patientSpawnInterval/1000 + ' Sekunden angepasst.');
       } else {
         // Spieler hat Fragen beantwortet, erhöhe die Spawnrate leicht
         patientSpawnInterval = Math.max(3000, patientSpawnInterval - 500); // Reduziere um 0,5 Sekunden, Mindestintervall 3 Sekunden
         clearInterval(spawnIntervalId);
         spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
         showMessage("Gute Arbeit! Patienten spawnen leicht schneller.");
+        console.log('Spawn-Intervall auf ' + patientSpawnInterval/1000 + ' Sekunden angepasst.');
       }
       // Reset der Zählung für die nächste Minute
       questionsAnsweredInLastMinute = 0;
@@ -1292,23 +1291,9 @@
     // Funktion zur Überprüfung, ob der Spieler genügend Fragen beantwortet hat
     function startQuestionCheck() {
       questionCheckIntervalId = setInterval(function() {
-        // Überprüfen, ob der Spieler mindestens eine Frage in der letzten Minute beantwortet hat
-        if (questionsAnsweredInLastMinute < 1) {
-          // Spieler hat keine Fragen beantwortet, erhöhe die Spawnrate aggressiver
-          patientSpawnInterval = Math.max(2000, patientSpawnInterval - 1000); // Minimum 2 Sekunden
-          clearInterval(spawnIntervalId);
-          spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
-          showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen jetzt schneller.");
-        } else {
-          // Spieler hat Fragen beantwortet, halte die Spawnrate oder erhöhe sie leicht
-          patientSpawnInterval = Math.max(3000, patientSpawnInterval - 500); // Minimum 3 Sekunden
-          clearInterval(spawnIntervalId);
-          spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
-          showMessage("Gute Arbeit! Patienten spawnen leicht schneller.");
-        }
-        // Reset der Zählung für die nächste Minute
-        questionsAnsweredInLastMinute = 0;
-      }, questionCheckInterval);
+        adjustSpawnRate();
+      }, questionCheckIntervalTime);
+      console.log('Fragenüberprüfungs-Intervall gestartet alle ' + questionCheckIntervalTime/1000 + ' Sekunden.');
     }
 
     // Funktion zur Heilung eines Patienten
@@ -1346,6 +1331,7 @@
           document.getElementById('highscore').innerText = highscore;
 
           showMessage("Patient geheilt! Pflegepunkte abgezogen.");
+          console.log('Patient geheilt:', patient.name, 'Highscore:', highscore, 'Pflegepunkte:', carePoints);
 
           // Überprüfen, ob der Spieler verloren hat (optional)
           if (carePoints <= 0) {
@@ -1362,13 +1348,12 @@
       var position = getRandomGroundPosition();
       if (position) {
         createPatient(generatePatientData(), position);
+        console.log('Neuer Patient gespawnt:', position);
       }
     }
 
     // --- Ende der neuen Funktionen für Patientenmanagement ---
 
-    // Hinweis: Der ursprüngliche animate() Loop wurde bereits oben überschrieben.
-    
   </script>
 </body>
 </html>
