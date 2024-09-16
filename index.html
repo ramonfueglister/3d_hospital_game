@@ -267,11 +267,11 @@ async function loadQuestions() {
       // Überprüfen Sie, ob die Fragen erfolgreich geladen wurden
       console.log('Geladene Fragen:', loadedQuestions);
 
-      if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length || !loadedQuestions.patient.length) {
-        console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
-        alert('Fehler beim Laden der Fragen. Bitte überprüfen Sie die Entwicklerkonsole für weitere Details.');
-        return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
-      }
+     if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length) {
+  console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
+  alert('Fehler beim Laden der Fragen. Bitte überprüfen Sie die Entwicklerkonsole für weitere Details.');
+  return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
+}
 
       document.getElementById('startScreen').style.display = 'none';
       gameStartTime = Date.now(); // Spielstartzeit festlegen
