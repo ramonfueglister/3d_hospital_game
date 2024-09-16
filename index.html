@@ -304,10 +304,7 @@
 
       // Boden hinzufügen
       createGround();
-
-      // Himmel hinzufügen
-      createSky();
-
+      
       // Krankenhaus erstellen
       createHospital();
 
@@ -351,16 +348,7 @@
       walls.push(ground); // Für Kollisionserkennung
     }
 
-    function createSky() {
-      var skyGeometry = new THREE.SphereGeometry(1000, 64, 64);
-      var skyMaterial = new THREE.MeshBasicMaterial({
-        color: 0x87CEEB, // Himmelblau
-        side: THREE.BackSide
-      });
-      var sky = new THREE.Mesh(skyGeometry, skyMaterial);
-      scene.add(sky);
-    }
-
+    
     function startTimer() {
       var timerElement = document.getElementById('timer');
       timerInterval = setInterval(function() {
