@@ -283,6 +283,8 @@
 
     function init() {
       scene = new THREE.Scene();
+// Setze die Hintergrundfarbe der Szene auf blau
+    scene.background = new THREE.Color(0x87CEEB); // Himmelblau
       
       // Kamera erstellen
       camera = new THREE.PerspectiveCamera(
