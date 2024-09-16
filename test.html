@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Krankenhausabenteuer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #startScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 10;
+      text-align: center;
+      padding: 20px;
+    }
+    #startScreen button {
+      padding: 15px 30px;
+      font-size: 20px;
+      margin-top: 20px;
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 18px;
+      z-index: 5;
+    }
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 24px;
+      border: 2px solid white;
+      display: none;
+      z-index: 5;
+    }
+    #question {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: black;
+      font-size: 18px;
+      border: 2px solid black;
+      max-width: 80%;
+      z-index: 5;
+    }
+    #question button {
+      margin-top: 10px;
+      display: block;
+    }
+    #endScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 10;
+      color: white;
+      font-size: 36px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <h1>Willkommen zum Krankenhausabenteuer</h1>
+    <p>Steuerung:</p>
+    <ul style="text-align: left;">
+      <li><strong>W</strong> - Vorwärts bewegen</li>
+      <li><strong>S</strong> - Rückwärts bewegen</li>
+      <li><strong>A</strong> - Nach links bewegen</li>
+      <li><strong>D</strong> - Nach rechts bewegen</li>
+    </ul>
+    <p>Ziel des Spiels:</p>
+    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Punkte, bevor der Timer abläuft!</p>
+    <button onclick="startGame()">Spiel starten</button>
+  </div>
+  <div id="hud">
+    Punktzahl: <span id="score">0</span><br>
+    Zeit: <span id="timer">600</span>s
+  </div>
+  <div id="message"></div>
+  <div id="endScreen" style="display: none;">
+    <h1 id="endMessage"></h1>
+    <button onclick="location.reload()">Neu starten</button>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    var scene, camera, renderer, nurse, controls;
+    var npcs = [];
+    var score = 0;
+    var walls = [];
+    var doors = [];
+    var hospitalObjects = [];
+    var gameStarted = false;
+    var questionDiv;
+    var questionActive = false;
+    var transparentWalls = [];
+    var roomWalls = [];
+    var npcPool = [];
+    var currentNPCs = [];
+    var rooms = [];
+    var answeredQuestions = {};
+    var timer = 600; // 600 Sekunden
+    var timerInterval;
+    var gameEnded = false;
+
+    function startGame() {
+      document.getElementById('startScreen').style.display = 'none';
+      init();
+      animate();
+      startTimer();
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(
+        75, window.innerWidth / window.innerHeight, 0.1, 1000
+      );
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Beleuchtung
+      var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      directionalLight.position.set(0, 10, 0);
+      scene.add(directionalLight);
+
+      // Boden
+      var floorMaterial = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+      var floorGeometry = new THREE.PlaneGeometry(200, 200);
+      var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      // Krankenhaus erstellen
+      createHospital();
+
+      // Spielerfigur
+      var nurseGeometry = new THREE.BoxGeometry(1, 2, 1);
+      var nurseMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+      nurse = new THREE.Mesh(nurseGeometry, nurseMaterial);
+      nurse.position.y = 1;
+      scene.add(nurse);
+
+      // NPCs erstellen
+      createNPCPool();
+      selectRandomNPCs();
+
+      // Kameraposition
+      camera.position.set(0, 5, 10);
+      camera.lookAt(nurse.position);
+
+      // Steuerung
+      controls = {
+        moveForward: false,
+        moveBackward: false,
+        moveLeft: false,
+        moveRight: false
+      };
+
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup', onKeyUp);
+
+      gameStarted = true;
+    }
+
+    function startTimer() {
+      var timerElement = document.getElementById('timer');
+      timerInterval = setInterval(function() {
+        if (gameEnded) {
+          clearInterval(timerInterval);
+          return;
+        }
+        timer--;
+        timerElement.innerText = timer;
+        if (timer <= 0) {
+          timer = 0;
+          timerElement.innerText = timer;
+          endGame(false);
+        }
+      }, 1000);
+    }
+
+    function createHospital() {
+      var wallMaterial = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 });
+      var roomConfigs = [
+        { x: -30, z: -30, width: 20, depth: 30, name: 'Notaufnahme' },
+        { x: 0, z: -30, width: 30, depth: 30, name: 'Wartezimmer' },
+        { x: 35, z: -30, width: 30, depth: 30, name: 'Radiologie' },
+        { x: -30, z: 10, width: 30, depth: 30, name: 'Intensivstation' },
+        { x: 10, z: 10, width: 40, depth: 30, name: 'Allgemeine Station' },
+        { x: 40, z: 10, width: 20, depth: 30, name: 'Operationssaal' },
+        { x: -30, z: 50, width: 20, depth: 30, name: 'Apotheke' },
+        { x: 0, z: 50, width: 30, depth: 30, name: 'Labor' },
+        { x: 35, z: 50, width: 30, depth: 30, name: 'Personalraum' },
+      ];
+
+      roomConfigs.forEach(function(config) {
+        createRoom(config, wallMaterial);
+      });
+
+      // Wände für Kollisionserkennung sammeln
+      walls = walls.concat(roomWalls);
+    }
+
+    function createRoom(config, wallMaterial) {
+      var wallThickness = 0.5;
+      var wallHeight = 5;
+      var wallsInRoom = [];
+
+      var halfWidth = config.width / 2;
+      var halfDepth = config.depth / 2;
+
+      // Linke Wand
+      var leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
+      leftWall.position.set(config.x - halfWidth, wallHeight / 2, config.z);
+      scene.add(leftWall);
+      wallsInRoom.push(leftWall);
+
+      // Rechte Wand
+      var rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
+      rightWall.position.set(config.x + halfWidth, wallHeight / 2, config.z);
+      scene.add(rightWall);
+      wallsInRoom.push(rightWall);
+
+      // Hintere Wand
+      var backWall = new THREE.Mesh(new THREE.BoxGeometry(config.width, wallHeight, wallThickness), wallMaterial);
+      backWall.position.set(config.x, wallHeight / 2, config.z - halfDepth);
+      scene.add(backWall);
+      wallsInRoom.push(backWall);
+
+      // Vordere Wand mit Tür
+      var doorWidth = 4;
+      var wall1Width = (config.width - doorWidth) / 2;
+
+      var wall1 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
+      wall1.position.set(config.x - wall1Width / 2 - doorWidth / 2, wallHeight / 2, config.z + halfDepth);
+      scene.add(wall1);
+      wallsInRoom.push(wall1);
+
+      var wall2 = new THREE.Mesh(new THREE.BoxGeometry(wall1Width, wallHeight, wallThickness), wallMaterial);
+      wall2.position.set(config.x + wall1Width / 2 + doorWidth / 2, wallHeight / 2, config.z + halfDepth);
+      scene.add(wall2);
+      wallsInRoom.push(wall2);
+
+      // Tür
+      var door = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, wallHeight, 0.2), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      door.position.set(config.x, wallHeight / 2, config.z + halfDepth + 0.1);
+      door.name = config.name;
+      door.open = false;
+      scene.add(door);
+      doors.push(door);
+      wallsInRoom.push(door); // Tür zur Kollisionserkennung hinzufügen
+
+      // Türposition speichern
+      var doorPosition = new THREE.Vector3(config.x, 1, config.z + halfDepth);
+
+      // Türbeschriftung
+      var loader = new THREE.FontLoader();
+      loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+        var textGeometry = new THREE.TextGeometry(config.name, {
+          font: font,
+          size: 0.7,
+          height: 0.1,
+        });
+        var textMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+        var textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(config.x - config.name.length * 0.35, wallHeight - 1, config.z + halfDepth + 0.5);
+        scene.add(textMesh);
+      });
+
+      // Raumgrenzen speichern
+      var room = {
+        name: config.name,
+        minX: config.x - halfWidth,
+        maxX: config.x + halfWidth,
+        minZ: config.z - halfDepth,
+        maxZ: config.z + halfDepth,
+        doorPosition: doorPosition
+      };
+      rooms.push(room);
+
+      // Wände für Kollisionserkennung sammeln
+      wallsInRoom.forEach(function(wall) {
+        roomWalls.push(wall);
+      });
+    }
+
+    function createNPCPool() {
+      // 50 NPCs mit detaillierten Geschichten generieren
+      for (var i = 0; i < 50; i++) {
+        var npcType = ['doctor', 'nurse', 'patient'][Math.floor(Math.random() * 3)];
+        var npc = generateNPCData(npcType, i);
+        npcPool.push(npc);
+      }
+    }
+
+    function selectRandomNPCs() {
+      // 10 zufällige NPCs auswählen
+      currentNPCs = npcPool.sort(() => 0.5 - Math.random()).slice(0, 10);
+      currentNPCs.forEach(function(data, index) {
+        data.idNumber = index;
+        createNPC(data.type, data);
+      });
+    }
+
+    function generateNPCData(type, index) {
+      // Detaillierte Geschichten und Fragen generieren
+      var data = { idNumber: index, type: type };
+      data.questions = [];
+
+      data.name = '';
+      data.story = '';
+
+      switch (type) {
+        case 'doctor':
+          data.name = 'Dr. ' + ['Müller', 'Schmidt', 'Klein', 'Fischer', 'Weber'][index % 5];
+          data.story = `Ich bin ${data.name}, ein Spezialist für ${['Kardiologie', 'Neurologie', 'Onkologie', 'Orthopädie', 'Dermatologie'][index % 5]}.`;
+          break;
+        case 'nurse':
+          data.name = 'Schwester ' + ['Anna', 'Lisa', 'Maria', 'Julia', 'Sophie'][index % 5];
+          data.story = `Hallo, ich bin ${data.name}. Ich arbeite auf der Station für ${['Innere Medizin', 'Chirurgie', 'Pädiatrie', 'Gynäkologie', 'Psychiatrie'][index % 5]}.`;
+          break;
+        case 'patient':
+          data.name = ['Thomas', 'Michael', 'Stefan', 'Andreas', 'Markus'][index % 5];
+          data.story = `Hallo, ich bin ${data.name}. Ich bin Patient hier im Krankenhaus.`;
+          break;
+      }
+
+      // Fragen hinzufügen
+      for (var q = 0; q < 10; q++) {
+        var questionData = {};
+        switch (type) {
+          case 'doctor':
+            questionData.question = `Frage ${q + 1}: Welche Behandlung ist am besten geeignet für ${['Herzrhythmusstörungen', 'Schlaganfall', 'Lungenkrebs', 'Knochenbrüche', 'Hautkrebs'][q % 5]}?`;
+            questionData.answers = [
+              'A. ' + ['Medikamente', 'Physiotherapie', 'Operation', 'Chemotherapie', 'Strahlentherapie'][q % 5],
+              'B. ' + ['Herzschrittmacher', 'Thrombolyse', 'Immuntherapie', 'Gipsverband', 'Laserbehandlung'][q % 5],
+              'C. ' + ['Diät und Bewegung', 'Blutverdünner', 'Strahlentherapie', 'Schmerzmittel', 'Salben'][q % 5]
+            ];
+            questionData.correctAnswer = (q % 3) + 1;
+            break;
+          case 'nurse':
+            questionData.question = `Frage ${q + 1}: Was ist die wichtigste Pflegemaßnahme bei einem Patienten mit ${['Bluthochdruck', 'nach einer Operation', 'Fieber', 'Schwangerschaft', 'Depression'][q % 5]}?`;
+            questionData.answers = [
+              'A. ' + ['Medikamentengabe überwachen', 'Wundpflege', 'Temperatur messen', 'Geburtsvorbereitung', 'Gespräche führen'][q % 5],
+              'B. ' + ['Flüssigkeitszufuhr sicherstellen', 'Mobilisation unterstützen', 'Kühlung anwenden', 'Ernährungsberatung', 'Medikation überwachen'][q % 5],
+              'C. ' + ['Blutdruck messen', 'Schmerzmanagement', 'Bettruhe gewährleisten', 'Ultraschall durchführen', 'Bewegung fördern'][q % 5]
+            ];
+            questionData.correctAnswer = (q % 3) + 1;
+            break;
+          case 'patient':
+            questionData.question = `Frage ${q + 1}: Ich habe Beschwerden wie ${['Kopfschmerzen', 'Magenprobleme', 'Rückenschmerzen', 'Husten', 'Allergien'][q % 5]}. Was sollte ich tun?`;
+            questionData.answers = [
+              'A. ' + ['Schmerzmittel nehmen', 'Fasten', 'Wärmeanwendungen', 'Hustensaft nehmen', 'Antihistaminika einnehmen'][q % 5],
+              'B. ' + ['Zum Arzt gehen', 'Entspannungsübungen', 'Physiotherapie', 'Inhalieren', 'Allergietest machen'][q % 5],
+              'C. ' + ['Abwarten', 'Tee trinken', 'Sport treiben', 'Viel trinken', 'Fenster schließen'][q % 5]
+            ];
+            questionData.correctAnswer = (q % 3) + 1;
+            break;
+        }
+        data.questions.push(questionData);
+      }
+
+      return data;
+    }
+
+    function createNPC(type, data) {
+      var geometry, material, symbol;
+      switch(type) {
+        case 'doctor':
+          geometry = new THREE.SphereGeometry(1, 16, 16);
+          material = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+          symbol = '⚕';
+          break;
+        case 'nurse':
+          geometry = new THREE.BoxGeometry(1, 2, 1);
+          material = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+          symbol = '⛑';
+          break;
+        case 'patient':
+          geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+          material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+          symbol = '☺';
+          break;
+        default:
+          geometry = new THREE.BoxGeometry(1, 2, 1);
+          material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+          symbol = '?';
+      }
+      var npc = new THREE.Mesh(geometry, material);
+
+      // NPC in zufälligem Raum platzieren
+      var room = rooms[Math.floor(Math.random() * rooms.length)];
+      npc.currentRoom = room;
+      npc.position.set(
+        Math.random() * (room.maxX - room.minX - 2) + room.minX + 1,
+        1,
+        Math.random() * (room.maxZ - room.minZ - 2) + room.minZ + 1
+      );
+
+      npc.name = data.name;
+      npc.story = data.story;
+      npc.questions = data.questions;
+      npc.idNumber = data.idNumber;
+      npc.type = type;
+      npc.targetPosition = null;
+      npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
+      npc.failedMoves = 0; // Zähler für fehlgeschlagene Bewegungen
+      npc.isChangingRoom = false;
+      npc.nextRoom = null;
+      npc.questionsAsked = 0; // Anzahl der gestellten Fragen
+
+      // Symbol über dem Kopf hinzufügen
+      var spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.CanvasTexture(generateTextCanvas(symbol, 64)),
+        depthTest: false
+      });
+      var sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.set(0, 2.5, 0);
+      sprite.scale.set(1.5, 1.5, 1);
+      npc.add(sprite);
+
+      scene.add(npc);
+      npcs.push(npc);
+    }
+
+    function generateTextCanvas(text, size) {
+      var canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      var context = canvas.getContext('2d');
+      context.font = size + 'px Arial';
+      context.fillStyle = 'white';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, size / 2, size / 2);
+      return canvas;
+    }
+
+    function onKeyDown(event) {
+      if (gameEnded) return;
+      switch (event.keyCode) {
+        case 87: // W
+          controls.moveForward = true;
+          break;
+        case 83: // S
+          controls.moveBackward = true;
+          break;
+        case 65: // A
+          controls.moveLeft = true;
+          break;
+        case 68: // D
+          controls.moveRight = true;
+          break;
+      }
+    }
+
+    function onKeyUp(event) {
+      switch (event.keyCode) {
+        case 87: // W
+          controls.moveForward = false;
+          break;
+        case 83: // S
+          controls.moveBackward = false;
+          break;
+        case 65: // A
+          controls.moveLeft = false;
+          break;
+        case 68: // D
+          controls.moveRight = false;
+          break;
+      }
+    }
+
+    function animate() {
+      if (!gameStarted || gameEnded) return;
+
+      requestAnimationFrame(animate);
+
+      // Bewegung der Krankenschwester
+      var speed = 0.3;
+      var deltaX = 0;
+      var deltaZ = 0;
+      if (controls.moveForward) deltaZ -= speed;
+      if (controls.moveBackward) deltaZ += speed;
+      if (controls.moveLeft) deltaX -= speed;
+      if (controls.moveRight) deltaX += speed;
+
+      nurse.position.x += deltaX;
+      nurse.position.z += deltaZ;
+
+      // Kollisionserkennung für Spieler
+      walls.forEach(function(wall) {
+        var wallBox = new THREE.Box3().setFromObject(wall);
+        var nurseBox = new THREE.Box3().setFromObject(nurse);
+        if (nurseBox.intersectsBox(wallBox)) {
+          nurse.position.x -= deltaX;
+          nurse.position.z -= deltaZ;
+        }
+      });
+
+      // Türen öffnen/schließen und Kollision aktualisieren
+      doors.forEach(function(door) {
+        var nurseDistance = nurse.position.distanceTo(door.position);
+        var npcNear = npcs.some(function(npc) {
+          return npc.position.distanceTo(door.position) < 5;
+        });
+
+        if ((nurseDistance < 5 || npcNear) && !door.open) {
+          door.open = true;
+          // Tür aus Szene und Kollisionserkennung entfernen
+          scene.remove(door);
+          var index = walls.indexOf(door);
+          if (index > -1) walls.splice(index, 1);
+        } else if ((nurseDistance >= 5 && !npcNear) && door.open) {
+          door.open = false;
+          // Tür wieder zur Szene und Kollisionserkennung hinzufügen
+          scene.add(door);
+          walls.push(door);
+        }
+      });
+
+      // Kamera folgen
+      camera.position.x = nurse.position.x;
+      camera.position.z = nurse.position.z + 10;
+      camera.lookAt(nurse.position);
+
+      // Wände transparent machen, wenn sie die Sicht blockieren
+      transparentWalls.forEach(function(wall) {
+        wall.material.opacity = 1;
+        wall.material.transparent = false;
+      });
+      transparentWalls = [];
+
+      var directionVector = nurse.position.clone().sub(camera.position).normalize();
+      var raycaster = new THREE.Raycaster(camera.position, directionVector);
+      var intersects = raycaster.intersectObjects(walls);
+
+      intersects.forEach(function(intersect) {
+        var wall = intersect.object;
+        wall.material.opacity = 0.5;
+        wall.material.transparent = true;
+        transparentWalls.push(wall);
+      });
+
+      // NPC-Bewegung
+      npcs.forEach(function(npc) {
+        if (npc.isPaused) {
+          return; // NPC ist pausiert und bewegt sich nicht
+        }
+
+        // Wenn NPC kein Ziel hat, neues Ziel zuweisen
+        if (!npc.targetPosition) {
+          assignNPCTargetPosition(npc);
+        }
+
+        // Richtung zum Ziel berechnen
+        var direction = new THREE.Vector3().subVectors(npc.targetPosition, npc.position);
+        var distance = direction.length();
+
+        if (distance > 0.1) {
+          direction.normalize();
+          var npcSpeed = 0.05;
+          var deltaX = direction.x * npcSpeed;
+          var deltaZ = direction.z * npcSpeed;
+
+          npc.position.x += deltaX;
+          npc.position.z += deltaZ;
+
+          // Kollisionserkennung für NPCs
+          var collision = false;
+          walls.forEach(function(wall) {
+            var wallBox = new THREE.Box3().setFromObject(wall);
+            var npcBox = new THREE.Box3().setFromObject(npc);
+            if (npcBox.intersectsBox(wallBox)) {
+              collision = true;
+            }
+          });
+
+          if (collision) {
+            // Bewegung rückgängig machen
+            npc.position.x -= deltaX;
+            npc.position.z -= deltaZ;
+            npc.failedMoves++;
+
+            if (npc.failedMoves > 10) {
+              // Neues Ziel zuweisen, wenn mehrere Fehlversuche
+              assignNPCTargetPosition(npc);
+              npc.failedMoves = 0;
+            }
+          } else {
+            npc.failedMoves = 0; // Reset bei erfolgreicher Bewegung
+          }
+        } else {
+          // Ziel erreicht
+          if (npc.isChangingRoom) {
+            if (npc.currentRoom !== npc.nextRoom) {
+              // NPC hat die Tür erreicht, aktualisiere den aktuellen Raum
+              npc.currentRoom = npc.nextRoom;
+              // Bewege NPC zur Türposition des neuen Raums
+              npc.targetPosition = npc.currentRoom.doorPosition.clone();
+            } else {
+              // NPC hat die Tür des neuen Raums passiert
+              npc.isChangingRoom = false;
+              npc.nextRoom = null;
+              assignNPCTargetPosition(npc);
+            }
+          } else {
+            if (Math.random() < 0.3) {
+              // Raum wechseln
+              npc.isChangingRoom = true;
+              npc.nextRoom = rooms[Math.floor(Math.random() * rooms.length)];
+              // Bewege NPC zur Türposition des aktuellen Raums
+              npc.targetPosition = npc.currentRoom.doorPosition.clone();
+            } else {
+              assignNPCTargetPosition(npc);
+            }
+          }
+        }
+      });
+
+      // Interaktion mit NPCs
+      npcs.forEach(function(npc) {
+        var distanceToNurse = nurse.position.distanceTo(npc.position);
+        if (distanceToNurse < 3) {
+          if (!questionActive) {
+            showQuestion(npc);
+          }
+        } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 3) {
+          hideQuestion();
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    function assignNPCTargetPosition(npc) {
+      if (npc.isChangingRoom) {
+        if (npc.currentRoom !== npc.nextRoom) {
+          // Bewege zur Tür des aktuellen Raums
+          npc.targetPosition = npc.currentRoom.doorPosition.clone();
+        } else {
+          // Bewege zur Türposition im neuen Raum
+          npc.targetPosition = npc.currentRoom.doorPosition.clone();
+        }
+      } else {
+        var room = npc.currentRoom;
+        npc.targetPosition = new THREE.Vector3(
+          Math.random() * (room.maxX - room.minX - 2) + room.minX + 1,
+          1,
+          Math.random() * (room.maxZ - room.minZ - 2) + room.minZ + 1
+        );
+      }
+    }
+
+    var currentNPC;
+
+    function showQuestion(npc) {
+      questionActive = true;
+      currentNPC = npc;
+      npc.isPaused = true; // NPC anhalten
+
+      // Überprüfen, ob der NPC noch Fragen hat
+      if (npc.questionsAsked >= 3) {
+        showMessage(npc.name + ': "Vielen Dank für Ihre Hilfe!"');
+        npc.isPaused = false;
+        questionActive = false;
+        currentNPC = null;
+        return;
+      }
+
+      // Finde eine zufällige unbeantwortete Frage
+      var npcKey = 'npc_' + npc.idNumber;
+      if (!answeredQuestions[npcKey]) {
+        answeredQuestions[npcKey] = [];
+      }
+
+      var remainingQuestions = npc.questions.filter((q, index) => !answeredQuestions[npcKey].includes(index));
+
+      if (remainingQuestions.length === 0) {
+        showMessage(npc.name + ': "Vielen Dank für Ihre Hilfe!"');
+        npc.isPaused = false;
+        questionActive = false;
+        currentNPC = null;
+        return;
+      }
+
+      var randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+      var questionData = remainingQuestions[randomIndex];
+      var questionIndex = npc.questions.indexOf(questionData);
+
+      questionDiv = document.createElement('div');
+      questionDiv.id = 'question';
+      questionDiv.innerHTML = `
+        <p>${npc.story}</p>
+        <p>${npc.name} fragt: ${questionData.question}</p>
+        <button onclick="selectAnswer(1, ${npc.idNumber}, ${questionIndex})">${questionData.answers[0]}</button>
+        <button onclick="selectAnswer(2, ${npc.idNumber}, ${questionIndex})">${questionData.answers[1]}</button>
+        <button onclick="selectAnswer(3, ${npc.idNumber}, ${questionIndex})">${questionData.answers[2]}</button>
+      `;
+      document.body.appendChild(questionDiv);
+    }
+
+    function hideQuestion() {
+      questionActive = false;
+      if (questionDiv) {
+        document.body.removeChild(questionDiv);
+        questionDiv = null;
+      }
+      if (currentNPC) {
+        currentNPC.isPaused = false; // NPC Bewegung fortsetzen
+        currentNPC = null;
+      }
+    }
+
+    function showMessage(text) {
+      var messageDiv = document.getElementById('message');
+      messageDiv.innerText = text;
+      messageDiv.style.display = 'block';
+      setTimeout(function() {
+        messageDiv.style.display = 'none';
+      }, 2000);
+    }
+
+    function selectAnswer(choice, npcId, questionIndex) {
+      var npc = npcs.find(n => n.idNumber === npcId);
+      var questionData = npc.questions[questionIndex];
+      var message;
+      if (choice === questionData.correctAnswer) {
+        message = "Antwort ist richtig.";
+        score += 10;
+      } else {
+        message = "Antwort ist leider falsch.";
+        score -= 5;
+      }
+      showMessage(message);
+      document.getElementById('score').innerText = score;
+
+      // Frage als beantwortet markieren
+      var npcKey = 'npc_' + npcId;
+      if (!answeredQuestions[npcKey]) {
+        answeredQuestions[npcKey] = [];
+      }
+      answeredQuestions[npcKey].push(questionIndex);
+      npc.questionsAsked++;
+
+      hideQuestion();
+
+      // Überprüfen, ob der Spieler gewonnen hat
+      if (score >= 100) {
+        endGame(true);
+      }
+    }
+
+    function endGame(won) {
+      gameEnded = true;
+      clearInterval(timerInterval);
+      var endScreen = document.getElementById('endScreen');
+      var endMessage = document.getElementById('endMessage');
+      if (won) {
+        endMessage.innerText = 'Sie haben gewonnen! Ihre Punktzahl: ' + score;
+      } else {
+        endMessage.innerText = 'Zeit abgelaufen! Game Over. Ihre Punktzahl: ' + score;
+      }
+      endScreen.style.display = 'flex';
+    }
+
+    window.addEventListener('resize', function() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
