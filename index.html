@@ -79,7 +79,7 @@
       to { opacity: 1; }
     }
 
-    /* HUD und andere Elemente bleiben unverändert */
+    /* HUD und andere Elemente */
     #hud {
       position: absolute;
       top: 10px;
@@ -87,7 +87,11 @@
       color: white;
       font-size: 18px;
       z-index: 5;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
     }
+
     #message {
       position: absolute;
       top: 50%;
@@ -101,6 +105,7 @@
       display: none;
       z-index: 5;
     }
+
     #question {
       position: absolute;
       bottom: 10px;
@@ -114,6 +119,7 @@
       max-width: 80%;
       z-index: 5;
     }
+
     #question button {
       margin-top: 10px;
       display: block;
@@ -125,9 +131,11 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
+
     #question button:hover {
       background-color: #e0e0e0;
     }
+
     #endScreen {
       position: absolute;
       width: 100%;
@@ -142,6 +150,7 @@
       font-size: 36px;
       text-align: center;
     }
+
     #endScreen button {
       padding: 15px 30px;
       font-size: 20px;
@@ -154,6 +163,7 @@
       transition: background-color 0.3s, transform 0.3s;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
+
     #endScreen button:hover {
       background-color: #f50057;
       transform: scale(1.05);
@@ -172,13 +182,14 @@
       <li><strong>D</strong> - Nach rechts bewegen</li>
     </ul>
     <p>Ziel des Spiels:</p>
-    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Punkte, bevor der Timer abläuft!</p>
+    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Pflegepunkte, bevor der Timer abläuft!</p>
     <button onclick="startGame()">Spiel starten</button>
   </div>
 
   <!-- HUD -->
   <div id="hud">
-    Punktzahl: <span id="score">0</span><br>
+    Pflegepunkte: <span id="carePoints">100</span><br>
+    Highscore: <span id="highscore">0</span><br>
     Zeit: <span id="timer">600</span>s
   </div>
 
@@ -197,7 +208,6 @@
     // Globale Variablen
     var scene, camera, renderer, nurse, controls;
     var npcs = [];
-    var score = 0;
     var walls = [];
     var doors = [];
     var hospitalObjects = [];
@@ -227,6 +237,10 @@
       nurse: [],
       patient: []
     };
+
+    // Neue Variablen für das Punktesystem
+    var carePoints = 100; // Startpflegepunkte
+    var highscore = 0; // Highscore
 
     // Funktion zum Laden der Fragen aus der JSON-Datei auf GitHub
     async function loadQuestions() {
@@ -283,8 +297,9 @@
 
     function init() {
       scene = new THREE.Scene();
-// Setze die Hintergrundfarbe der Szene auf blau
-    scene.background = new THREE.Color(0x87CEEB); // Himmelblau
+      
+      // Setze die Hintergrundfarbe der Szene auf blau
+      scene.background = new THREE.Color(0x87CEEB); // Himmelblau
       
       // Kamera erstellen
       camera = new THREE.PerspectiveCamera(
@@ -306,7 +321,7 @@
 
       // Boden hinzufügen
       createGround();
-      
+
       // Krankenhaus erstellen
       createHospital();
 
@@ -321,7 +336,8 @@
       selectRandomNPCs();
 
       // Kameraposition einstellen
-      camera.position.set(0, 80, 300); // Angepasste Kameraposition für bessere Sicht
+      camera.position.set(0, 80, 150); // Noch näher heranzoomen
+
       camera.lookAt(new THREE.Vector3(0, 0, 0));
 
       // Steuerung initialisieren
@@ -350,7 +366,6 @@
       walls.push(ground); // Für Kollisionserkennung
     }
 
-    
     function startTimer() {
       var timerElement = document.getElementById('timer');
       timerInterval = setInterval(function() {
@@ -538,54 +553,53 @@
     }
 
     function createPlayer() {
-    // Spielerfigur erstellen
-    nurse = new THREE.Group();
+      // Spielerfigur erstellen
+      nurse = new THREE.Group();
 
-    // Körper
-    var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
-    var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
-    var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 4;
-    nurse.add(body);
+      // Körper
+      var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
+      var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
+      var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 4;
+      nurse.add(body);
 
-    // Kopf
-    var headGeometry = new THREE.SphereGeometry(2, 16, 16);
-    var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
-    var head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.y = 8.75;
-    nurse.add(head);
+      // Kopf
+      var headGeometry = new THREE.SphereGeometry(2, 16, 16);
+      var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+      var head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 8.75;
+      nurse.add(head);
 
-    // Arme
-    var armGeometry = new THREE.BoxGeometry(1, 4, 1);
-    var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+      // Arme
+      var armGeometry = new THREE.BoxGeometry(1, 4, 1);
+      var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
 
-    var leftArm = new THREE.Mesh(armGeometry, armMaterial);
-    leftArm.position.set(-2.5, 3, 0);
-    nurse.add(leftArm);
-    nurse.leftArm = leftArm;
+      var leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-2.5, 3, 0);
+      nurse.add(leftArm);
+      nurse.leftArm = leftArm;
 
-    var rightArm = new THREE.Mesh(armGeometry, armMaterial);
-    rightArm.position.set(2.5, 3, 0);
-    nurse.add(rightArm);
-    nurse.rightArm = rightArm;
+      var rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(2.5, 3, 0);
+      nurse.add(rightArm);
+      nurse.rightArm = rightArm;
 
-    // Beine
-    var legGeometry = new THREE.BoxGeometry(2, 4, 2);
-    var legMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
+      // Beine
+      var legGeometry = new THREE.BoxGeometry(2, 4, 2);
+      var legMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
 
-    var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-    leftLeg.position.set(-1, 0.5, 0);
-    nurse.add(leftLeg);
+      var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-1, 0.5, 0);
+      nurse.add(leftLeg);
 
-    var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-    rightLeg.position.set(1, 0.5, 0);
-    nurse.add(rightLeg);
+      var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(1, 0.5, 0);
+      nurse.add(rightLeg);
 
-    // Position der Spielerfigur auf der Bodenfläche
-    nurse.position.set(0, 4, 0); // y = halbe Höhe des Körpers
-    scene.add(nurse);
-}
-
+      // Position der Spielerfigur auf der Bodenfläche
+      nurse.position.set(0, 4, 0); // y = halbe Höhe des Körpers
+      scene.add(nurse);
+    }
 
     function createNPCPool() {
       // 50 NPCs mit detaillierten Geschichten generieren
@@ -802,8 +816,8 @@
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 150; // Angepasst für bessere Sicht
-      camera.position.y = 80; // Festes Y-Level für stabile Ansicht
+      camera.position.z = nurse.position.z + 150; // Noch näher heranzoomen
+      camera.position.y = 80; // Niedrigeres Y-Level für mehr Nähe
       camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
@@ -854,11 +868,16 @@
       npcs.forEach(function(npc) {
         var distanceToNurse = nurse.position.distanceTo(npc.position);
         if (distanceToNurse < 10) { // Erhöht für größere Szene
-          if (!questionActive) {
+          if (!questionActive && npc.type !== 'patient') {
             showQuestion(npc);
           }
         } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
           hideQuestion();
+        }
+
+        // Behandlung von Patienteninteraktionen
+        if (npc.type === 'patient' && distanceToNurse < 10 && !npc.isHealed) {
+          healPatient(npc);
         }
       });
 
@@ -1023,13 +1042,13 @@
       var message;
       if (choice === questionData.correctAnswer) {
         message = "Antwort ist richtig.";
-        score += 10;
+        carePoints += 50; // Pflegepunkte erhöhen
       } else {
         message = "Antwort ist leider falsch.";
         // Nur bei richtiger Antwort Punkte erhalten, keine Abzüge
       }
       showMessage(message);
-      document.getElementById('score').innerText = score;
+      document.getElementById('carePoints').innerText = carePoints;
 
       // Frage als beantwortet markieren
       var npcKey = 'npc_' + npcId;
@@ -1041,10 +1060,15 @@
 
       hideQuestion();
 
-      // Überprüfen, ob der Spieler gewonnen hat
-      if (score >= 100) {
+      // Überprüfen, ob der Spieler gewonnen hat (optional, kann angepasst werden)
+      if (highscore >= 10) { // Beispiel: Spieler gewinnt bei 10 geheilten Patienten
         endGame(true);
       }
+
+      // Optionale Überprüfung, wenn Pflegepunkte überschritten werden (optional)
+      // if (carePoints >= 1000) {
+      //   endGame(true);
+      // }
     }
 
     function endGame(won) {
@@ -1053,9 +1077,9 @@
       var endScreen = document.getElementById('endScreen');
       var endMessage = document.getElementById('endMessage');
       if (won) {
-        endMessage.innerText = 'Sie haben gewonnen! Ihre Punktzahl: ' + score;
+        endMessage.innerText = 'Sie haben gewonnen! Ihr Highscore: ' + highscore;
       } else {
-        endMessage.innerText = 'Zeit abgelaufen! Game Over. Ihre Punktzahl: ' + score;
+        endMessage.innerText = 'Zeit abgelaufen oder Pflegepunkte aufgebraucht! Game Over. Ihr Highscore: ' + highscore;
       }
       endScreen.style.display = 'flex';
     }
@@ -1158,6 +1182,7 @@
       npc.targetPosition = null;
       npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
       npc.questionsAsked = 0; // Anzahl der gestellten Fragen
+      npc.isHealed = false; // Flag für geheilten Patienten
 
       // Symbol über dem Kopf hinzufügen
       var spriteMaterial = new THREE.SpriteMaterial({
@@ -1228,6 +1253,52 @@
     }
 
     // --- Ende der neuen Funktionen für Patientenmanagement ---
+
+    // Funktion zur Heilung eines Patienten
+    function healPatient(patient) {
+      patient.isHealed = true;
+      patient.isPaused = true;
+
+      // Kurze, freudige Animation (z.B. Skalierung)
+      var duration = 500; // Dauer der Animation in ms
+      var startTime = Date.now();
+      var initialScale = patient.scale.clone();
+      var targetScale = new THREE.Vector3(2, 2, 2); // Vergrößerung für die Animation
+
+      function animateHealing() {
+        var elapsed = Date.now() - startTime;
+        var progress = elapsed / duration;
+        if (progress < 1) {
+          patient.scale.lerpVectors(initialScale, targetScale, progress);
+          requestAnimationFrame(animateHealing);
+        } else {
+          // Animation abgeschlossen, Patient entfernen
+          scene.remove(patient);
+          var index = npcs.indexOf(patient);
+          if (index > -1) npcs.splice(index, 1);
+          var pIndex = patients.indexOf(patient);
+          if (pIndex > -1) patients.splice(pIndex, 1);
+
+          // Pflegepunkte abziehen
+          carePoints -= 5;
+          if (carePoints < 0) carePoints = 0;
+          document.getElementById('carePoints').innerText = carePoints;
+
+          // Highscore erhöhen
+          highscore += 1;
+          document.getElementById('highscore').innerText = highscore;
+
+          showMessage("Patient geheilt! Pflegepunkte abgezogen.");
+
+          // Überprüfen, ob der Spieler verloren hat (optional)
+          if (carePoints <= 0) {
+            endGame(false);
+          }
+        }
+      }
+
+      animateHealing();
+    }
   </script>
 </body>
 </html>
