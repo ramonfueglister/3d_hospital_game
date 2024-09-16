@@ -120,6 +120,7 @@
     var timer = 600; // 600 Sekunden
     var timerInterval;
     var gameEnded = false;
+    var waypoints = []; // Wegpunkte für die NPC-Bewegung
 
     function startGame() {
       document.getElementById('startScreen').style.display = 'none';
@@ -145,8 +146,14 @@
       directionalLight.position.set(0, 10, 0);
       scene.add(directionalLight);
 
+      // Himmel hinzufügen
+      createSky();
+
       // Boden
-      var floorMaterial = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+      var floorTexture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/grass.jpg');
+      floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+      floorTexture.repeat.set(50, 50);
+      var floorMaterial = new THREE.MeshLambertMaterial({ map: floorTexture });
       var floorGeometry = new THREE.PlaneGeometry(200, 200);
       var floor = new THREE.Mesh(floorGeometry, floorMaterial);
       floor.rotation.x = -Math.PI / 2;
@@ -155,19 +162,18 @@
       // Krankenhaus erstellen
       createHospital();
 
-      // Spielerfigur
-      var nurseGeometry = new THREE.BoxGeometry(1, 2, 1);
-      var nurseMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
-      nurse = new THREE.Mesh(nurseGeometry, nurseMaterial);
-      nurse.position.y = 1;
-      scene.add(nurse);
+      // Wegpunkte erstellen
+      createWaypoints();
+
+      // Spielerfigur verbessern
+      createPlayer();
 
       // NPCs erstellen
       createNPCPool();
       selectRandomNPCs();
 
       // Kameraposition
-      camera.position.set(0, 5, 10);
+      camera.position.set(0, 10, 20);
       camera.lookAt(nurse.position);
 
       // Steuerung
@@ -182,6 +188,23 @@
       document.addEventListener('keyup', onKeyUp);
 
       gameStarted = true;
+    }
+
+    function createSky() {
+      var skyGeometry = new THREE.SphereGeometry(500, 32, 32);
+      var skyMaterial = new THREE.MeshBasicMaterial({
+        map: new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/sky.jpg'), // Funktionierende Himmelstextur
+        side: THREE.BackSide
+      });
+      var sky = new THREE.Mesh(skyGeometry, skyMaterial);
+      scene.add(sky);
+
+      // Sonne hinzufügen
+      var sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+      var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+      sun.position.set(100, 100, -100);
+      scene.add(sun);
     }
 
     function startTimer() {
@@ -202,34 +225,36 @@
     }
 
     function createHospital() {
-      var wallMaterial = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 });
       var roomConfigs = [
-        { x: -30, z: -30, width: 20, depth: 30, name: 'Notaufnahme' },
-        { x: 0, z: -30, width: 30, depth: 30, name: 'Wartezimmer' },
-        { x: 35, z: -30, width: 30, depth: 30, name: 'Radiologie' },
-        { x: -30, z: 10, width: 30, depth: 30, name: 'Intensivstation' },
-        { x: 10, z: 10, width: 40, depth: 30, name: 'Allgemeine Station' },
-        { x: 40, z: 10, width: 20, depth: 30, name: 'Operationssaal' },
-        { x: -30, z: 50, width: 20, depth: 30, name: 'Apotheke' },
-        { x: 0, z: 50, width: 30, depth: 30, name: 'Labor' },
-        { x: 35, z: 50, width: 30, depth: 30, name: 'Personalraum' },
+        { x: -30, z: -30, width: 20, depth: 30, name: 'Notaufnahme', color: 0xffcccc },
+        { x: 0, z: -30, width: 30, depth: 30, name: 'Wartezimmer', color: 0xccffcc },
+        { x: 35, z: -30, width: 30, depth: 30, name: 'Radiologie', color: 0xccccff },
+        { x: -30, z: 10, width: 30, depth: 30, name: 'Intensivstation', color: 0xffffcc },
+        { x: 10, z: 10, width: 40, depth: 30, name: 'Allgemeine Station', color: 0xffccff },
+        { x: 40, z: 10, width: 20, depth: 30, name: 'Operationssaal', color: 0xccffff },
+        { x: -30, z: 50, width: 20, depth: 30, name: 'Apotheke', color: 0xffe4b5 },
+        { x: 0, z: 50, width: 30, depth: 30, name: 'Labor', color: 0xd3d3d3 },
+        { x: 35, z: 50, width: 30, depth: 30, name: 'Personalraum', color: 0xadd8e6 },
       ];
 
       roomConfigs.forEach(function(config) {
-        createRoom(config, wallMaterial);
+        createRoom(config);
       });
 
       // Wände für Kollisionserkennung sammeln
       walls = walls.concat(roomWalls);
     }
 
-    function createRoom(config, wallMaterial) {
+    function createRoom(config) {
       var wallThickness = 0.5;
       var wallHeight = 5;
       var wallsInRoom = [];
 
       var halfWidth = config.width / 2;
       var halfDepth = config.depth / 2;
+
+      // Wandmaterial pro Raum
+      var wallMaterial = new THREE.MeshLambertMaterial({ color: config.color });
 
       // Linke Wand
       var leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, config.depth), wallMaterial);
@@ -304,9 +329,120 @@
       wallsInRoom.forEach(function(wall) {
         roomWalls.push(wall);
       });
+
+      // Möbel hinzufügen
+      addFurnitureToRoom(room);
+    }
+
+    function addFurnitureToRoom(room) {
+      // Pflanzen hinzufügen
+      var plantGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+      var plantMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+      var plant = new THREE.Mesh(plantGeometry, plantMaterial);
+      plant.position.set(room.minX + 2, 1, room.minZ + 2);
+      scene.add(plant);
+      walls.push(plant); // Für Kollisionserkennung
+
+      // Tisch hinzufügen
+      var tableGeometry = new THREE.BoxGeometry(3, 0.5, 2);
+      var tableMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+      var table = new THREE.Mesh(tableGeometry, tableMaterial);
+      table.position.set(room.maxX - 3, 0.25, room.maxZ - 3);
+      scene.add(table);
+      walls.push(table);
+
+      // Stuhl hinzufügen
+      var chairGeometry = new THREE.BoxGeometry(1, 1, 1);
+      var chairMaterial = new THREE.MeshLambertMaterial({ color: 0xA0522D });
+      var chair = new THREE.Mesh(chairGeometry, chairMaterial);
+      chair.position.set(room.maxX - 5, 0.5, room.maxZ - 3);
+      scene.add(chair);
+      walls.push(chair);
+
+      // Bett hinzufügen
+      var bedGeometry = new THREE.BoxGeometry(2, 0.5, 4);
+      var bedMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+      var bed = new THREE.Mesh(bedGeometry, bedMaterial);
+      bed.position.set(room.minX + 3, 0.25, room.maxZ - 3);
+      scene.add(bed);
+      walls.push(bed);
+    }
+
+    function createWaypoints() {
+      // Begehbare Bereiche (Flure und offene Bereiche)
+      waypoints = [
+        // Flur vor den Räumen in der ersten Reihe
+        new THREE.Vector3(-30, 1, -15),
+        new THREE.Vector3(0, 1, -15),
+        new THREE.Vector3(35, 1, -15),
+        // Flur vor den Räumen in der zweiten Reihe
+        new THREE.Vector3(-30, 1, 25),
+        new THREE.Vector3(10, 1, 25),
+        new THREE.Vector3(40, 1, 25),
+        // Flur vor den Räumen in der dritten Reihe
+        new THREE.Vector3(-30, 1, 65),
+        new THREE.Vector3(0, 1, 65),
+        new THREE.Vector3(35, 1, 65),
+        // Kreuzungen
+        new THREE.Vector3(-30, 1, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(35, 1, 0),
+        new THREE.Vector3(-30, 1, 40),
+        new THREE.Vector3(0, 1, 40),
+        new THREE.Vector3(35, 1, 40),
+      ];
+    }
+
+    function createPlayer() {
+      // Spielerfigur verbessern
+      nurse = new THREE.Group();
+
+      // Körper
+      var bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
+      var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+      var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 1;
+      nurse.add(body);
+
+      // Kopf
+      var headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+      var head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 2.75;
+      nurse.add(head);
+
+      // Arme
+      var armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+      var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+
+      var leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-0.65, 1.5, 0);
+      nurse.add(leftArm);
+      nurse.leftArm = leftArm;
+
+      var rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(0.65, 1.5, 0);
+      nurse.add(rightArm);
+      nurse.rightArm = rightArm;
+
+      // Beine
+      var legGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+      var legMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+
+      var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.25, 0.5, 0);
+      nurse.add(leftLeg);
+
+      var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.25, 0.5, 0);
+      nurse.add(rightLeg);
+
+      nurse.position.y = 0;
+      scene.add(nurse);
     }
 
     function createNPCPool() {
+      // (Unverändert)
       // 50 NPCs mit detaillierten Geschichten generieren
       for (var i = 0; i < 50; i++) {
         var npcType = ['doctor', 'nurse', 'patient'][Math.floor(Math.random() * 3)];
@@ -316,6 +452,7 @@
     }
 
     function selectRandomNPCs() {
+      // (Unverändert)
       // 10 zufällige NPCs auswählen
       currentNPCs = npcPool.sort(() => 0.5 - Math.random()).slice(0, 10);
       currentNPCs.forEach(function(data, index) {
@@ -325,7 +462,7 @@
     }
 
     function generateNPCData(type, index) {
-      // Detaillierte Geschichten und Fragen generieren
+      // (Unverändert)
       var data = { idNumber: index, type: type };
       data.questions = [];
 
@@ -386,38 +523,69 @@
     }
 
     function createNPC(type, data) {
-      var geometry, material, symbol;
+      var npc = new THREE.Group();
+
+      // Körper
+      var bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
+      var bodyMaterial;
+      var symbol;
       switch(type) {
         case 'doctor':
-          geometry = new THREE.SphereGeometry(1, 16, 16);
-          material = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+          bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
           symbol = '⚕';
           break;
         case 'nurse':
-          geometry = new THREE.BoxGeometry(1, 2, 1);
-          material = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+          bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
           symbol = '⛑';
           break;
         case 'patient':
-          geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-          material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+          bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
           symbol = '☺';
           break;
         default:
-          geometry = new THREE.BoxGeometry(1, 2, 1);
-          material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+          bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
           symbol = '?';
       }
-      var npc = new THREE.Mesh(geometry, material);
+      var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 1;
+      npc.add(body);
 
-      // NPC in zufälligem Raum platzieren
-      var room = rooms[Math.floor(Math.random() * rooms.length)];
-      npc.currentRoom = room;
-      npc.position.set(
-        Math.random() * (room.maxX - room.minX - 2) + room.minX + 1,
-        1,
-        Math.random() * (room.maxZ - room.minZ - 2) + room.minZ + 1
-      );
+      // Kopf
+      var headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+      var head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 2.75;
+      npc.add(head);
+
+      // Arme
+      var armGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+      var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+
+      var leftArm = new THREE.Mesh(armGeometry, armMaterial);
+      leftArm.position.set(-0.65, 1.5, 0);
+      npc.add(leftArm);
+      npc.leftArm = leftArm;
+
+      var rightArm = new THREE.Mesh(armGeometry, armMaterial);
+      rightArm.position.set(0.65, 1.5, 0);
+      npc.add(rightArm);
+      npc.rightArm = rightArm;
+
+      // Beine
+      var legGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+      var legMaterial = bodyMaterial;
+
+      var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+      leftLeg.position.set(-0.25, 0.5, 0);
+      npc.add(leftLeg);
+
+      var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+      rightLeg.position.set(0.25, 0.5, 0);
+      npc.add(rightLeg);
+
+      // NPC an zufälligem Wegpunkt platzieren
+      var startWaypoint = waypoints[Math.floor(Math.random() * waypoints.length)];
+      npc.position.copy(startWaypoint);
 
       npc.name = data.name;
       npc.story = data.story;
@@ -426,9 +594,6 @@
       npc.type = type;
       npc.targetPosition = null;
       npc.isPaused = false; // NPC ist standardmäßig nicht pausiert
-      npc.failedMoves = 0; // Zähler für fehlgeschlagene Bewegungen
-      npc.isChangingRoom = false;
-      npc.nextRoom = null;
       npc.questionsAsked = 0; // Anzahl der gestellten Fragen
 
       // Symbol über dem Kopf hinzufügen
@@ -437,7 +602,7 @@
         depthTest: false
       });
       var sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.set(0, 2.5, 0);
+      sprite.position.set(0, 3.5, 0);
       sprite.scale.set(1.5, 1.5, 1);
       npc.add(sprite);
 
@@ -511,58 +676,22 @@
       nurse.position.z += deltaZ;
 
       // Kollisionserkennung für Spieler
-      walls.forEach(function(wall) {
-        var wallBox = new THREE.Box3().setFromObject(wall);
-        var nurseBox = new THREE.Box3().setFromObject(nurse);
-        if (nurseBox.intersectsBox(wallBox)) {
-          nurse.position.x -= deltaX;
-          nurse.position.z -= deltaZ;
-        }
-      });
+      checkCollisions(nurse, deltaX, deltaZ);
+
+      // Arme der Spielfigur bewegen
+      animateArms(nurse, deltaX !== 0 || deltaZ !== 0);
 
       // Türen öffnen/schließen und Kollision aktualisieren
-      doors.forEach(function(door) {
-        var nurseDistance = nurse.position.distanceTo(door.position);
-        var npcNear = npcs.some(function(npc) {
-          return npc.position.distanceTo(door.position) < 5;
-        });
-
-        if ((nurseDistance < 5 || npcNear) && !door.open) {
-          door.open = true;
-          // Tür aus Szene und Kollisionserkennung entfernen
-          scene.remove(door);
-          var index = walls.indexOf(door);
-          if (index > -1) walls.splice(index, 1);
-        } else if ((nurseDistance >= 5 && !npcNear) && door.open) {
-          door.open = false;
-          // Tür wieder zur Szene und Kollisionserkennung hinzufügen
-          scene.add(door);
-          walls.push(door);
-        }
-      });
+      updateDoors();
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 10;
-      camera.lookAt(nurse.position);
+      camera.position.z = nurse.position.z + 20;
+      camera.position.y = nurse.position.y + 10;
+      camera.lookAt(nurse.position.x, nurse.position.y + 2, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
-      transparentWalls.forEach(function(wall) {
-        wall.material.opacity = 1;
-        wall.material.transparent = false;
-      });
-      transparentWalls = [];
-
-      var directionVector = nurse.position.clone().sub(camera.position).normalize();
-      var raycaster = new THREE.Raycaster(camera.position, directionVector);
-      var intersects = raycaster.intersectObjects(walls);
-
-      intersects.forEach(function(intersect) {
-        var wall = intersect.object;
-        wall.material.opacity = 0.5;
-        wall.material.transparent = true;
-        transparentWalls.push(wall);
-      });
+      updateTransparentWalls();
 
       // NPC-Bewegung
       npcs.forEach(function(npc) {
@@ -588,55 +717,20 @@
           npc.position.x += deltaX;
           npc.position.z += deltaZ;
 
+          // Arme des NPCs bewegen
+          animateArms(npc, true);
+
           // Kollisionserkennung für NPCs
-          var collision = false;
-          walls.forEach(function(wall) {
-            var wallBox = new THREE.Box3().setFromObject(wall);
-            var npcBox = new THREE.Box3().setFromObject(npc);
-            if (npcBox.intersectsBox(wallBox)) {
-              collision = true;
-            }
-          });
-
-          if (collision) {
-            // Bewegung rückgängig machen
-            npc.position.x -= deltaX;
-            npc.position.z -= deltaZ;
-            npc.failedMoves++;
-
-            if (npc.failedMoves > 10) {
-              // Neues Ziel zuweisen, wenn mehrere Fehlversuche
-              assignNPCTargetPosition(npc);
-              npc.failedMoves = 0;
-            }
-          } else {
-            npc.failedMoves = 0; // Reset bei erfolgreicher Bewegung
+          if (checkCollisions(npc, deltaX, deltaZ)) {
+            // Bei Kollision neues Ziel zuweisen
+            assignNPCTargetPosition(npc);
           }
         } else {
-          // Ziel erreicht
-          if (npc.isChangingRoom) {
-            if (npc.currentRoom !== npc.nextRoom) {
-              // NPC hat die Tür erreicht, aktualisiere den aktuellen Raum
-              npc.currentRoom = npc.nextRoom;
-              // Bewege NPC zur Türposition des neuen Raums
-              npc.targetPosition = npc.currentRoom.doorPosition.clone();
-            } else {
-              // NPC hat die Tür des neuen Raums passiert
-              npc.isChangingRoom = false;
-              npc.nextRoom = null;
-              assignNPCTargetPosition(npc);
-            }
-          } else {
-            if (Math.random() < 0.3) {
-              // Raum wechseln
-              npc.isChangingRoom = true;
-              npc.nextRoom = rooms[Math.floor(Math.random() * rooms.length)];
-              // Bewege NPC zur Türposition des aktuellen Raums
-              npc.targetPosition = npc.currentRoom.doorPosition.clone();
-            } else {
-              assignNPCTargetPosition(npc);
-            }
-          }
+          // Ziel erreicht, neues Ziel zuweisen
+          assignNPCTargetPosition(npc);
+
+          // Arme des NPCs stoppen
+          animateArms(npc, false);
         }
       });
 
@@ -655,23 +749,84 @@
       renderer.render(scene, camera);
     }
 
-    function assignNPCTargetPosition(npc) {
-      if (npc.isChangingRoom) {
-        if (npc.currentRoom !== npc.nextRoom) {
-          // Bewege zur Tür des aktuellen Raums
-          npc.targetPosition = npc.currentRoom.doorPosition.clone();
-        } else {
-          // Bewege zur Türposition im neuen Raum
-          npc.targetPosition = npc.currentRoom.doorPosition.clone();
+    function animateArms(object, isMoving) {
+      if (isMoving) {
+        var time = Date.now() * 0.005;
+        var armSwing = Math.sin(time) * 0.5;
+
+        if (object.leftArm) {
+          object.leftArm.rotation.x = armSwing;
+        }
+        if (object.rightArm) {
+          object.rightArm.rotation.x = -armSwing;
         }
       } else {
-        var room = npc.currentRoom;
-        npc.targetPosition = new THREE.Vector3(
-          Math.random() * (room.maxX - room.minX - 2) + room.minX + 1,
-          1,
-          Math.random() * (room.maxZ - room.minZ - 2) + room.minZ + 1
-        );
+        if (object.leftArm) {
+          object.leftArm.rotation.x = 0;
+        }
+        if (object.rightArm) {
+          object.rightArm.rotation.x = 0;
+        }
       }
+    }
+
+    function checkCollisions(object, deltaX, deltaZ) {
+      var collision = false;
+      var objectBox = new THREE.Box3().setFromObject(object);
+      walls.forEach(function(wall) {
+        var wallBox = new THREE.Box3().setFromObject(wall);
+        if (objectBox.intersectsBox(wallBox)) {
+          object.position.x -= deltaX;
+          object.position.z -= deltaZ;
+          collision = true;
+        }
+      });
+      return collision;
+    }
+
+    function updateDoors() {
+      doors.forEach(function(door) {
+        var nurseDistance = nurse.position.distanceTo(door.position);
+        var npcNear = npcs.some(function(npc) {
+          return npc.position.distanceTo(door.position) < 5;
+        });
+
+        if ((nurseDistance < 5 || npcNear) && !door.open) {
+          door.open = true;
+          // Tür aus Szene und Kollisionserkennung entfernen
+          scene.remove(door);
+          var index = walls.indexOf(door);
+          if (index > -1) walls.splice(index, 1);
+        } else if ((nurseDistance >= 5 && !npcNear) && door.open) {
+          door.open = false;
+          // Tür wieder zur Szene und Kollisionserkennung hinzufügen
+          scene.add(door);
+          walls.push(door);
+        }
+      });
+    }
+
+    function updateTransparentWalls() {
+      transparentWalls.forEach(function(wall) {
+        wall.material.opacity = 1;
+        wall.material.transparent = false;
+      });
+      transparentWalls = [];
+
+      var directionVector = nurse.position.clone().sub(camera.position).normalize();
+      var raycaster = new THREE.Raycaster(camera.position, directionVector);
+      var intersects = raycaster.intersectObjects(walls);
+
+      intersects.forEach(function(intersect) {
+        var wall = intersect.object;
+        wall.material.opacity = 0.5;
+        wall.material.transparent = true;
+        transparentWalls.push(wall);
+      });
+    }
+
+    function assignNPCTargetPosition(npc) {
+      npc.targetPosition = waypoints[Math.floor(Math.random() * waypoints.length)].clone();
     }
 
     var currentNPC;
