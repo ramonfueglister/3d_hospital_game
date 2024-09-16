@@ -321,7 +321,7 @@
       selectRandomNPCs();
 
       // Kameraposition einstellen
-      camera.position.set(0, 150, 300); // Angepasste Kameraposition für bessere Sicht
+      camera.position.set(0, 80, 300); // Angepasste Kameraposition für bessere Sicht
       camera.lookAt(new THREE.Vector3(0, 0, 0));
 
       // Steuerung initialisieren
@@ -801,8 +801,8 @@
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 300; // Angepasst für bessere Sicht
-      camera.position.y = 150; // Festes Y-Level für stabile Ansicht
+      camera.position.z = nurse.position.z + 150; // Angepasst für bessere Sicht
+      camera.position.y = 80; // Festes Y-Level für stabile Ansicht
       camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
