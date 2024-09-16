@@ -79,7 +79,7 @@
       to { opacity: 1; }
     }
 
-    /* HUD und andere Elemente bleiben unverändert */
+    /* HUD und andere Elemente */
     #hud {
       position: absolute;
       top: 10px;
@@ -128,36 +128,8 @@
     #question button:hover {
       background-color: #e0e0e0;
     }
-    #endScreen {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 10;
-      color: white;
-      font-size: 36px;
-      text-align: center;
-    }
-    #endScreen button {
-      padding: 15px 30px;
-      font-size: 20px;
-      margin-top: 20px;
-      background-color: #ff4081;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.3s;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-    #endScreen button:hover {
-      background-color: #f50057;
-      transform: scale(1.05);
-    }
+    /* Entfernen des Endbildschirms, da kein Game Over mehr */
+    /* Falls Sie den Endbildschirm beibehalten möchten, können Sie ihn hier lassen */
   </style>
 </head>
 <body>
@@ -172,20 +144,20 @@
       <li><strong>D</strong> - Nach rechts bewegen</li>
     </ul>
     <p>Ziel des Spiels:</p>
-    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie 100 Punkte, bevor der Timer abläuft!</p>
+    <p>Interagieren Sie mit den NPCs und beantworten Sie ihre Fragen. Sammeln Sie so viele Pflegepunkte wie möglich!</p>
     <button onclick="startGame()">Spiel starten</button>
   </div>
 
   <!-- HUD -->
   <div id="hud">
-    Punktzahl: <span id="score">0</span><br>
-    Zeit: <span id="timer">600</span>s
+    Pflegepunkte: <span id="score">500</span>
   </div>
 
   <!-- Nachrichtenbereich -->
   <div id="message"></div>
 
-  <!-- Endbildschirm -->
+  <!-- Endbildschirm (optional entfernt) -->
+  <!-- Falls Sie den Endbildschirm beibehalten möchten, lassen Sie ihn hier -->
   <div id="endScreen" style="display: none;">
     <h1 id="endMessage"></h1>
     <button onclick="location.reload()">Neu starten</button>
@@ -197,7 +169,7 @@
     // Globale Variablen für die Sonne und die Lichtquelle
     var scene, camera, renderer, nurse, controls;
     var npcs = [];
-    var score = 0;
+    var score = 500; // Startpunktzahl auf 500 gesetzt
     var walls = [];
     var doors = [];
     var hospitalObjects = [];
@@ -210,8 +182,9 @@
     var currentNPCs = [];
     var rooms = [];
     var answeredQuestions = {};
-    var timer = 600; // 600 Sekunden
-    var timerInterval;
+    // Entfernen des Timers und zugehöriger Variablen
+    // var timer = 600; // 600 Sekunden
+    // var timerInterval;
     var gameEnded = false;
     var waypoints = []; // Wegpunkte für die NPC-Bewegung
 
@@ -257,8 +230,8 @@
       // Überprüfen Sie, ob die Fragen erfolgreich geladen wurden
       console.log('Geladene Fragen:', loadedQuestions);
 
-      if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length || !loadedQuestions.patient.length) {
-        console.error('Fehler: Keine Fragen wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
+      if (!loadedQuestions.doctor.length || !loadedQuestions.nurse.length) {
+        console.error('Fehler: Keine Fragen für Ärzte oder Pflegekräfte wurden geladen. Überprüfen Sie die JSON-Datei und den URL-Pfad.');
         alert('Fehler beim Laden der Fragen. Bitte überprüfen Sie die Entwicklerkonsole für weitere Details.');
         return; // Beenden Sie das Spiel, wenn keine Fragen geladen wurden
       }
@@ -267,7 +240,8 @@
       gameStartTime = Date.now(); // Spielstartzeit festlegen
       init();
       animate();
-      startTimer();
+      // Entfernen des Timers starten
+      // startTimer();
     }
 
     function init() {
@@ -305,15 +279,15 @@
       // Wegpunkte erstellen
       createWaypoints();
 
-      // Spielerfigur verbessern
+      // Spielerfigur verbessern und außerhalb der Gebäude starten
       createPlayer();
 
       // NPCs erstellen
       createNPCPool();
       selectRandomNPCs();
 
-      // Kameraposition
-      camera.position.set(0, 15, 30);
+      // Kameraposition etwas außerhalb der Gebäude setzen
+      camera.position.set(0, 15, 40); // Angepasste Position
       camera.lookAt(nurse.position);
 
       // Steuerung
@@ -347,6 +321,7 @@
       scene.add(sun);
     }
 
+    /* Entfernen der Timer-Funktion
     function startTimer() {
       var timerElement = document.getElementById('timer');
       timerInterval = setInterval(function() {
@@ -363,6 +338,7 @@
         }
       }, 1000);
     }
+    */
 
     function createHospital() {
       var roomConfigs = [
@@ -534,7 +510,7 @@
     }
 
     function createPlayer() {
-      // Spielerfigur verbessern
+      // Spielerfigur verbessern und außerhalb der Gebäude starten
       nurse = new THREE.Group();
 
       // Körper
@@ -577,7 +553,8 @@
       rightLeg.position.set(0.25, 0.5, 0);
       nurse.add(rightLeg);
 
-      nurse.position.set(0, 0, 0);
+      // Startposition etwas außerhalb der Gebäude (z.B. südlich der Notaufnahme)
+      nurse.position.set(-30, 0, -60); // Angepasste Position
       scene.add(nurse);
     }
 
@@ -618,12 +595,14 @@
         case 'patient':
           data.name = ['Thomas', 'Michael', 'Stefan', 'Andreas', 'Markus'][index % 5];
           data.story = `Hallo, ich bin ${data.name}. Ich bin Patient hier im Krankenhaus.`;
+          // Patienten stellen keine Fragen mehr
+          data.questions = []; 
           break;
       }
 
       // Die Fragen werden nun aus der geladenen JSON-Datei genommen
       // Es wird angenommen, dass loadedQuestions bereits geladen wurde
-      if (loadedQuestions[type] && loadedQuestions[type].length > 0) {
+      if (loadedQuestions[type] && loadedQuestions[type].length > 0 && type !== 'patient') {
         // Shuffle the questions to ensure randomness
         var shuffled = loadedQuestions[type].sort(() => 0.5 - Math.random());
         // Nehmen Sie die ersten 10 Fragen oder weniger, je nach Verfügbarkeit
@@ -849,7 +828,7 @@
       npcs.forEach(function(npc) {
         var distanceToNurse = nurse.position.distanceTo(npc.position);
         if (distanceToNurse < 3) {
-          if (!questionActive) {
+          if (!questionActive && npc.type !== 'patient') { // Patienten stellen keine Fragen
             showQuestion(npc);
           }
         } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 3) {
@@ -1018,7 +997,7 @@
       var message;
       if (choice === questionData.correctAnswer) {
         message = "Antwort ist richtig.";
-        score += 10;
+        score += 100; // Punkte für richtige Antwort auf 100 erhöht
       } else {
         message = "Antwort ist leider falsch.";
         // Nur bei richtiger Antwort Punkte erhalten, keine Abzüge
@@ -1035,13 +1014,9 @@
       npc.questionsAsked++;
 
       hideQuestion();
-
-      // Überprüfen, ob der Spieler gewonnen hat
-      if (score >= 100) {
-        endGame(true);
-      }
     }
 
+    /* Entfernen der endGame-Funktion, da kein Game Over mehr
     function endGame(won) {
       gameEnded = true;
       clearInterval(timerInterval);
@@ -1054,6 +1029,7 @@
       }
       endScreen.style.display = 'flex';
     }
+    */
 
     window.addEventListener('resize', function() {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -1066,7 +1042,7 @@
       if (!gameStartTime) return;
 
       var elapsedTime = (Date.now() - gameStartTime) / 1000; // in Sekunden
-      var totalGameTime = 600; // Gesamtspielzeit in Sekunden
+      var totalGameTime = 600; // Gesamtspielzeit in Sekunden (unverändert für Sonnenbewegung)
       var t = elapsedTime / totalGameTime;
 
       if (t > 1) t = 1; // Begrenzen auf t=1
