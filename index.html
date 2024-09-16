@@ -194,7 +194,7 @@
   <!-- Three.js Bibliothek -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    // Globale Variablen für die Sonne und die Lichtquelle
+    // Globale Variablen
     var scene, camera, renderer, nurse, controls;
     var npcs = [];
     var score = 0;
@@ -214,12 +214,6 @@
     var timerInterval;
     var gameEnded = false;
     var waypoints = []; // Wegpunkte für die NPC-Bewegung
-
-    // Neue globale Variablen für die Sonne
-    var sun;
-    var directionalLight;
-    var gameStartTime;
-    var sunRadius = 300; // Radius der Sonnenbahn
 
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
@@ -274,7 +268,6 @@
       }
 
       document.getElementById('startScreen').style.display = 'none';
-      gameStartTime = Date.now(); // Spielstartzeit festlegen
       init();
       animate();
       startTimer();
@@ -296,7 +289,7 @@
       var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
       
-      directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
       directionalLight.position.set(100, 300, 100); // Position der Lichtquelle
       directionalLight.castShadow = true;
       scene.add(directionalLight);
@@ -351,17 +344,15 @@
     }
 
     function createSky() {
-  var skyGeometry = new THREE.SphereGeometry(1000, 64, 64);
-  var skyMaterial = new THREE.MeshBasicMaterial({
-    color: 0x87CEEB, // Himmelblau
-    side: THREE.BackSide
-  });
-  var sky = new THREE.Mesh(skyGeometry, skyMaterial);
-  scene.add(sky);
+      var skyGeometry = new THREE.SphereGeometry(1000, 64, 64);
+      var skyMaterial = new THREE.MeshBasicMaterial({
+        color: 0x87CEEB, // Himmelblau
+        side: THREE.BackSide
+      });
+      var sky = new THREE.Mesh(skyGeometry, skyMaterial);
+      scene.add(sky);
+    }
 
-
-
-      
     function startTimer() {
       var timerElement = document.getElementById('timer');
       timerInterval = setInterval(function() {
@@ -876,9 +867,6 @@
         }
       });
 
-      // Sonnenbewegung aktualisieren
-      updateSunPosition();
-
       renderer.render(scene, camera);
     }
 
@@ -1081,45 +1069,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       }
     });
-
-    // Funktion zur Aktualisierung der Sonnenposition
-    function updateSunPosition() {
-      if (!gameStartTime) return;
-
-      var elapsedTime = (Date.now() - gameStartTime) / 1000; // in Sekunden
-      var totalGameTime = 600; // Gesamtspielzeit in Sekunden
-      var t = elapsedTime / totalGameTime;
-
-      if (t > 1) t = 1; // Begrenzen auf t=1
-
-      // Berechne den Winkel der Sonne (von -90° bis +270°)
-      var angle = -Math.PI / 2 + t * 2 * Math.PI;
-
-      // Berechne die neue Position der Sonne
-      var x = sunRadius * Math.cos(angle);
-      var y = sunRadius * Math.sin(angle);
-      var z = 300; // Sonne bleibt in der Front der Szene
-
-      sun.position.set(x, y, z);
-
-      // Aktualisiere die Position des Lichts entsprechend der Sonne
-      directionalLight.position.set(x, y, z);
-      directionalLight.lookAt(0, 0, 0); // Licht auf die Szene ausrichten
-
-      // Ändere die Intensität des Lichts basierend auf der Sonnenhöhe
-      directionalLight.intensity = Math.max(0.2, y / sunRadius);
-
-      // Optional: Ändere die Farbe des Himmels basierend auf der Sonnenhöhe
-      var skyColor = new THREE.Color(0x87CEEB); // Standard Himmelblau
-      if (y < 0) {
-        skyColor = new THREE.Color(0x000033); // Nachtblau
-      } else if (y < sunRadius * 0.5) {
-        skyColor = new THREE.Color(0x87CEEB); // Himmelblau
-      } else {
-        skyColor = new THREE.Color(0xFFD700); // Gold
-      }
-      scene.background = skyColor;
-    }
   </script>
 </body>
 </html>
