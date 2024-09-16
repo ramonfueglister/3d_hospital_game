@@ -229,37 +229,37 @@
     };
 
     // Funktion zum Laden der Fragen aus der JSON-Datei auf GitHub
-async function loadQuestions() {
-  try {
-    const response = await fetch('https://raw.githubusercontent.com/ramonfueglister/3d_hospital_game/main/questions.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    // Debugging: Überprüfen, ob die Antwort korrekt ist
-    console.log('Antwort erfolgreich empfangen:', response);
-    
-    const data = await response.json();
+    async function loadQuestions() {
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/ramonfueglister/3d_hospital_game/main/questions.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        // Debugging: Überprüfen, ob die Antwort korrekt ist
+        console.log('Antwort erfolgreich empfangen:', response);
+        
+        const data = await response.json();
 
-    // Überprüfen Sie den Inhalt der geladenen Daten
-    console.log('Fragen erfolgreich geladen:', data);
+        // Überprüfen Sie den Inhalt der geladenen Daten
+        console.log('Fragen erfolgreich geladen:', data);
 
-    // Überprüfen Sie, ob die Daten im erwarteten Format vorliegen
-    if (data.doctor && data.nurse && data.patient) {
-      if (data.doctor.length === 0 || data.nurse.length === 0) {
-        console.error('Fehler: Keine Fragen für Ärzte oder Pflegekräfte vorhanden.');
-      } else {
-        loadedQuestions = data;
-        console.log('Fragen erfolgreich zugewiesen:', loadedQuestions);
+        // Überprüfen Sie, ob die Daten im erwarteten Format vorliegen
+        if (data.doctor && data.nurse && data.patient) {
+          if (data.doctor.length === 0 || data.nurse.length === 0) {
+            console.error('Fehler: Keine Fragen für Ärzte oder Pflegekräfte vorhanden.');
+          } else {
+            loadedQuestions = data;
+            console.log('Fragen erfolgreich zugewiesen:', loadedQuestions);
+          }
+        } else {
+          console.error('Fehler: Die JSON-Daten haben nicht das erwartete Format.');
+          console.log('Geladene Daten:', data);
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden der Fragen:', error);
       }
-    } else {
-      console.error('Fehler: Die JSON-Daten haben nicht das erwartete Format.');
-      console.log('Geladene Daten:', data);
     }
-  } catch (error) {
-    console.error('Fehler beim Laden der Fragen:', error);
-  }
-}
 
     async function startGame() {
       await loadQuestions(); // Fragen laden, bevor das Spiel startet
@@ -303,7 +303,7 @@ async function loadQuestions() {
       createSky();
 
       // Erde als Boden hinzufügen (statt der grünen Plane)
-      var earthRadius = 100;
+      var earthRadius = 50; // Angepasster Radius für bessere Skalierung
       var earthMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22, side: THREE.FrontSide });
       var earthGeometry = new THREE.SphereGeometry(earthRadius, 32, 32);
       var earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -324,7 +324,7 @@ async function loadQuestions() {
       selectRandomNPCs();
 
       // Kameraposition
-      camera.position.set(0, 15, 30);
+      camera.position.set(0, 20, 60); // Angepasste Kameraposition für bessere Sicht
       camera.lookAt(nurse.position);
 
       // Steuerung
@@ -808,8 +808,8 @@ async function loadQuestions() {
 
       // Kamera folgen
       camera.position.x = nurse.position.x;
-      camera.position.z = nurse.position.z + 30;
-      camera.position.y = nurse.position.y + 15;
+      camera.position.z = nurse.position.z + 60; // Angepasst für bessere Sicht
+      camera.position.y = nurse.position.y + 20; // Angepasst für bessere Sicht
       camera.lookAt(nurse.position.x, nurse.position.y + 2, nurse.position.z);
 
       // Wände transparent machen, wenn sie die Sicht blockieren
@@ -1067,12 +1067,12 @@ async function loadQuestions() {
     }
 
     window.addEventListener('resize', function() {
-  if (camera) { // Überprüfen, ob die Kamera definiert ist
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-});
+      if (camera) { // Überprüfen, ob die Kamera definiert ist
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
 
     // Funktion zur Aktualisierung der Sonnenposition
     function updateSunPosition() {
