@@ -17,6 +17,15 @@
         "C. Schmerzmittel"
       ],
       "correctAnswer": 1
+    },
+    {
+      "question": "Welche Therapie ist am effektivsten bei Hautkrebs?",
+      "answers": [
+        "A. Strahlentherapie",
+        "B. Chemotherapie",
+        "C. Chirurgische Entfernung"
+      ],
+      "correctAnswer": 3
     }
   ],
   "nurse": [
@@ -35,6 +44,15 @@
         "A. Wundpflege",
         "B. Ernährung überwachen",
         "C. Bewegung fördern"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "question": "Was ist die wichtigste Pflege bei einem Patienten mit Fieber?",
+      "answers": [
+        "A. Temperatur messen",
+        "B. Schmerzmanagement",
+        "C. Flüssigkeitszufuhr erhöhen"
       ],
       "correctAnswer": 1
     }
@@ -57,6 +75,15 @@
         "C. Zum Arzt gehen"
       ],
       "correctAnswer": 3
+    },
+    {
+      "question": "Wenn ich Rückenschmerzen habe, sollte ich:",
+      "answers": [
+        "A. Schmerzmittel nehmen",
+        "B. Physiotherapie beginnen",
+        "C. Viel schlafen"
+      ],
+      "correctAnswer": 2
     }
   ]
 }
