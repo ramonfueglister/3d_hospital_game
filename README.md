@@ -1,4 +1,5 @@
-Ja, das Laden von Dateien über GitHub ist möglich, aber Sie müssen die JSON-Datei von GitHub so bereitstellen, dass sie über eine URL abgerufen werden kann. Hier sind die Schritte, wie Sie die Datei von Ihrem GitHub-Repository laden können:
+Tipps für das Laden von JSON Files mit Github.
+Das Laden von Dateien über GitHub ist möglich, aber Sie müssen die JSON-Datei von GitHub so bereitstellen, dass sie über eine URL abgerufen werden kann. Hier sind die Schritte, wie Sie die Datei von Ihrem GitHub-Repository laden können:
 
 Schritt 1: Projekt auf GitHub hochladen
 Erstellen Sie ein neues GitHub-Repository und laden Sie Ihr Projekt mit den beiden Dateien index.html und questions.json hoch. Die Verzeichnisstruktur sollte so aussehen:
