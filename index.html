@@ -359,14 +359,7 @@
       var sky = new THREE.Mesh(skyGeometry, skyMaterial);
       scene.add(sky);
 
-      // Sonne hinzufügen
-      var sunGeometry = new THREE.SphereGeometry(20, 32, 32);
-      var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-      sun = new THREE.Mesh(sunGeometry, sunMaterial);
-      sun.position.set(300, 300, -300); // Anfangsposition (im Himmel)
-      scene.add(sun);
-    }
-
+      
     function startTimer() {
       var timerElement = document.getElementById('timer');
       timerInterval = setInterval(function() {
