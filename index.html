@@ -173,15 +173,15 @@
 </head>
 <body>
   <!-- Startbildschirm -->
-<div id="startScreen">
+  <div id="startScreen">
     <h1>Willkommen zu Patient 0</h1>
     <p>Steuere deinen Charakter durch das Krankenhaus, beantworte Fragen und heile so viele Patienten wie möglich!</p>
     <h2>Steuerung:</h2>
     <ul>
-        <li><strong>W</strong> - Vorwärts bewegen</li>
-        <li><strong>S</strong> - Rückwärts bewegen</li>
-        <li><strong>A</strong> - Nach links bewegen</li>
-        <li><strong>D</strong> - Nach rechts bewegen</li>
+      <li><strong>W</strong> - Vorwärts bewegen</li>
+      <li><strong>S</strong> - Rückwärts bewegen</li>
+      <li><strong>A</strong> - Nach links bewegen</li>
+      <li><strong>D</strong> - Nach rechts bewegen</li>
     </ul>
     <h2>Spielziel:</h2>
     <p>Als Krankenpfleger ist es deine Aufgabe, Patienten zu heilen und dabei wichtige Fragen zu beantworten. 
@@ -191,8 +191,7 @@
     <button onclick="startGame()">Spiel starten</button>
     <!-- Autor und Jahreszahl -->
     <p style="margin-top: 20px; font-size: 16px; color: #ffffff;">Ein Spiel von Ramon Füglister, 2024</p>
-</div>
-
+  </div>
 
   <!-- HUD -->
   <div id="hud">
@@ -235,9 +234,10 @@
 
     // Neue Variablen für Patientenmanagement
     var patients = [];
-    var patientWave = 1; // Startwelle
     var nextPatientSpawnTime = 0; // Nächste Spawn-Zeit
     var patientSpawnInterval = 10000; // 10 Sekunden in Millisekunden
+    var spawnIntervalId;
+    var questionCheckIntervalId;
 
     // Variable zum Speichern der geladenen Fragen
     var loadedQuestions = {
@@ -304,7 +304,7 @@
       animate();
       startTimer();
       spawnInitialPatient(); // Erster Patient spawnt beim Spielstart
-      scheduleNextPatientWave(); // Planung der nächsten Patient Welle
+      startContinuousPatientSpawning(); // Start des kontinuierlichen Patienten-Spawns
       startQuestionCheck(); // Start der Überprüfung der Fragen pro Minute
     }
 
@@ -895,9 +895,7 @@
       });
 
       // Patientenmanagement: Überprüfen, ob neue Patienten gespawnt werden sollen
-      handlePatientSpawning();
-
-      renderer.render(scene, camera);
+      // Dies ist nun durch das kontinuierliche Spawnsystem abgedeckt
     }
 
     function animateArms(object, isMoving) {
@@ -1083,6 +1081,7 @@
     function endGame(won) {
       gameEnded = true;
       clearInterval(timerInterval);
+      clearInterval(spawnIntervalId);
       clearInterval(questionCheckIntervalId);
       var endScreen = document.getElementById('endScreen');
       var endMessage = document.getElementById('endMessage');
@@ -1234,45 +1233,60 @@
       return true; // Position liegt außerhalb aller Gebäude
     }
 
-    // Funktion zum Behandeln des Patienten-Spawns
-    function handlePatientSpawning() {
-      var currentTime = Date.now();
-      if (currentTime >= nextPatientSpawnTime) {
-        // Anzahl der Patienten pro Welle entspricht der aktuellen Wellenzahl
-        for (var i = 0; i < patientWave; i++) {
-          spawnPatient();
+    // Funktion zum Starten des kontinuierlichen Patienten-Spawns
+    function startContinuousPatientSpawning() {
+      spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
+    }
+
+    // Funktion zum kontinuierlichen Spawnen von Patienten mit dynamischer Anpassung der Spawnrate
+    function startContinuousPatientSpawning() {
+      spawnIntervalId = setInterval(function() {
+        spawnPatient();
+        // Optionale Anpassung der Spawnrate im Verlauf des Spiels
+        // Zum Beispiel alle 2 Minuten die Spawnrate leicht erhöhen
+        if (timer % 120 === 0 && timer > 0) {
+          adjustSpawnRate();
         }
-        patientWave++;
-        scheduleNextPatientWave();
-      }
+      }, patientSpawnInterval);
     }
 
-    // Funktion zum Spawn eines einzelnen Patienten
-    function spawnPatient() {
-      var position = getRandomGroundPosition();
-      if (position) {
-        createPatient(generatePatientData(), position);
+    // Funktion zum Anpassen der Spawnrate basierend auf der Spielerleistung
+    function adjustSpawnRate() {
+      if (questionsAnsweredInLastMinute < 1) {
+        // Spieler hat keine Fragen beantwortet, erhöhe die Spawnrate aggressiver
+        patientSpawnInterval = Math.max(2000, patientSpawnInterval - 1000); // Reduziere um 1 Sekunde, Mindestintervall 2 Sekunden
+        clearInterval(spawnIntervalId);
+        spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
+        showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen jetzt schneller.");
+      } else {
+        // Spieler hat Fragen beantwortet, erhöhe die Spawnrate leicht
+        patientSpawnInterval = Math.max(3000, patientSpawnInterval - 500); // Reduziere um 0,5 Sekunden, Mindestintervall 3 Sekunden
+        clearInterval(spawnIntervalId);
+        spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
+        showMessage("Gute Arbeit! Patienten spawnen leicht schneller.");
       }
-    }
-
-    // Funktion zum Planen der nächsten Patientenwelle
-    function scheduleNextPatientWave() {
-      // Spawnt nach patientSpawnInterval (10 Sekunden)
-      nextPatientSpawnTime = Date.now() + patientSpawnInterval;
+      // Reset der Zählung für die nächste Minute
+      questionsAnsweredInLastMinute = 0;
     }
 
     // Funktion zur Überprüfung, ob der Spieler genügend Fragen beantwortet hat
     function startQuestionCheck() {
       questionCheckIntervalId = setInterval(function() {
+        // Überprüfen, ob der Spieler mindestens eine Frage in der letzten Minute beantwortet hat
         if (questionsAnsweredInLastMinute < 1) {
-          // Spieler hat keine Fragen beantwortet, erhöhe Spawnrate
+          // Spieler hat keine Fragen beantwortet, erhöhe die Spawnrate aggressiver
           patientSpawnInterval = Math.max(2000, patientSpawnInterval - 1000); // Minimum 2 Sekunden
-          showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen schneller.");
+          clearInterval(spawnIntervalId);
+          spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
+          showMessage("Sie haben keine Fragen beantwortet! Patienten spawnen jetzt schneller.");
         } else {
-          // Spieler hat Fragen beantwortet, halte Spawnrate
-          patientSpawnInterval = 10000; // Zurück auf 10 Sekunden
+          // Spieler hat Fragen beantwortet, halte die Spawnrate oder erhöhe sie leicht
+          patientSpawnInterval = Math.max(3000, patientSpawnInterval - 500); // Minimum 3 Sekunden
+          clearInterval(spawnIntervalId);
+          spawnIntervalId = setInterval(spawnPatient, patientSpawnInterval);
+          showMessage("Gute Arbeit! Patienten spawnen leicht schneller.");
         }
-        // Reset für die nächste Minute
+        // Reset der Zählung für die nächste Minute
         questionsAnsweredInLastMinute = 0;
       }, questionCheckInterval);
     }
@@ -1323,7 +1337,111 @@
       animateHealing();
     }
 
+    // Funktion zum Spawnen eines einzelnen Patienten
+    function spawnPatient() {
+      var position = getRandomGroundPosition();
+      if (position) {
+        createPatient(generatePatientData(), position);
+      }
+    }
+
     // --- Ende der neuen Funktionen für Patientenmanagement ---
+
+    function animate() {
+      if (!gameStarted || gameEnded) return;
+
+      requestAnimationFrame(animate);
+
+      // Bewegung der Krankenschwester
+      var speed = 1;
+      var deltaX = 0;
+      var deltaZ = 0;
+      if (controls.moveForward) deltaZ -= speed;
+      if (controls.moveBackward) deltaZ += speed;
+      if (controls.moveLeft) deltaX -= speed;
+      if (controls.moveRight) deltaX += speed;
+
+      nurse.position.x += deltaX;
+      nurse.position.z += deltaZ;
+
+      // Kollisionserkennung für Spieler
+      checkCollisions(nurse, deltaX, deltaZ);
+
+      // Arme der Spielfigur bewegen
+      animateArms(nurse, deltaX !== 0 || deltaZ !== 0);
+
+      // Türen öffnen/schließen und Kollision aktualisieren
+      updateDoors();
+
+      // Kamera folgen
+      camera.position.x = nurse.position.x;
+      camera.position.z = nurse.position.z + 150; // Noch näher heranzoomen
+      camera.position.y = 80; // Niedrigeres Y-Level für mehr Nähe
+      camera.lookAt(nurse.position.x, nurse.position.y, nurse.position.z);
+
+      // Wände transparent machen, wenn sie die Sicht blockieren
+      updateTransparentWalls();
+
+      // NPC-Bewegung
+      npcs.forEach(function(npc) {
+        if (npc.isPaused) {
+          return; // NPC ist pausiert und bewegt sich nicht
+        }
+
+        // Wenn NPC kein Ziel hat, neues Ziel zuweisen
+        if (!npc.targetPosition) {
+          assignNPCTargetPosition(npc);
+        }
+
+        // Richtung zum Ziel berechnen
+        var direction = new THREE.Vector3().subVectors(npc.targetPosition, npc.position);
+        var distance = direction.length();
+
+        if (distance > 5) { // Halten Sie einen Mindestabstand zum Ziel
+          direction.normalize();
+          var npcSpeed = 1;
+          var deltaX_npc = direction.x * npcSpeed;
+          var deltaZ_npc = direction.z * npcSpeed;
+
+          npc.position.x += deltaX_npc;
+          npc.position.z += deltaZ_npc;
+
+          // Arme des NPCs bewegen
+          animateArms(npc, true);
+
+          // Kollisionserkennung für NPCs
+          if (checkCollisions(npc, deltaX_npc, deltaZ_npc)) {
+            // Bei Kollision neues Ziel zuweisen
+            assignNPCTargetPosition(npc);
+          }
+        } else {
+          // Ziel erreicht, neues Ziel zuweisen
+          assignNPCTargetPosition(npc);
+
+          // Arme des NPCs stoppen
+          animateArms(npc, false);
+        }
+      });
+
+      // Interaktion mit NPCs
+      npcs.forEach(function(npc) {
+        var distanceToNurse = nurse.position.distanceTo(npc.position);
+        if (distanceToNurse < 10) { // Erhöht für größere Szene
+          if (!questionActive && npc.type !== 'patient') {
+            showQuestion(npc);
+          }
+        } else if (questionActive && currentNPC && currentNPC.idNumber === npc.idNumber && distanceToNurse >= 10) {
+          hideQuestion();
+        }
+
+        // Behandlung von Patienteninteraktionen
+        if (npc.type === 'patient' && distanceToNurse < 10 && !npc.isHealed) {
+          healPatient(npc);
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
 
   </script>
 </body>
