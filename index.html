@@ -538,53 +538,54 @@
     }
 
     function createPlayer() {
-      // Spielerfigur erstellen
-      nurse = new THREE.Group();
+    // Spielerfigur erstellen
+    nurse = new THREE.Group();
 
-      // Körper
-      var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
-      var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
-      var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.position.y = 4;
-      nurse.add(body);
+    // Körper
+    var bodyGeometry = new THREE.BoxGeometry(4, 8, 4);
+    var bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
+    var body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 4;
+    nurse.add(body);
 
-      // Kopf
-      var headGeometry = new THREE.SphereGeometry(2, 16, 16);
-      var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
-      var head = new THREE.Mesh(headGeometry, headMaterial);
-      head.position.y = 8.75;
-      nurse.add(head);
+    // Kopf
+    var headGeometry = new THREE.SphereGeometry(2, 16, 16);
+    var headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+    var head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 8.75;
+    nurse.add(head);
 
-      // Arme
-      var armGeometry = new THREE.BoxGeometry(1, 4, 1);
-      var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
+    // Arme
+    var armGeometry = new THREE.BoxGeometry(1, 4, 1);
+    var armMaterial = new THREE.MeshLambertMaterial({ color: 0xffe0bd });
 
-      var leftArm = new THREE.Mesh(armGeometry, armMaterial);
-      leftArm.position.set(-2.5, 3, 0);
-      nurse.add(leftArm);
-      nurse.leftArm = leftArm;
+    var leftArm = new THREE.Mesh(armGeometry, armMaterial);
+    leftArm.position.set(-2.5, 3, 0);
+    nurse.add(leftArm);
+    nurse.leftArm = leftArm;
 
-      var rightArm = new THREE.Mesh(armGeometry, armMaterial);
-      rightArm.position.set(2.5, 3, 0);
-      nurse.add(rightArm);
-      nurse.rightArm = rightArm;
+    var rightArm = new THREE.Mesh(armGeometry, armMaterial);
+    rightArm.position.set(2.5, 3, 0);
+    nurse.add(rightArm);
+    nurse.rightArm = rightArm;
 
-      // Beine
-      var legGeometry = new THREE.BoxGeometry(2, 4, 2);
-      var legMaterial = new THREE.MeshLambertMaterial({ color: 0x0000ff });
+    // Beine
+    var legGeometry = new THREE.BoxGeometry(2, 4, 2);
+    var legMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // Gelb
 
-      var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-      leftLeg.position.set(-1, 0.5, 0);
-      nurse.add(leftLeg);
+    var leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+    leftLeg.position.set(-1, 0.5, 0);
+    nurse.add(leftLeg);
 
-      var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-      rightLeg.position.set(1, 0.5, 0);
-      nurse.add(rightLeg);
+    var rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+    rightLeg.position.set(1, 0.5, 0);
+    nurse.add(rightLeg);
 
-      // Position der Spielerfigur auf der Bodenfläche
-      nurse.position.set(0, 4, 0); // y = halbe Höhe des Körpers
-      scene.add(nurse);
-    }
+    // Position der Spielerfigur auf der Bodenfläche
+    nurse.position.set(0, 4, 0); // y = halbe Höhe des Körpers
+    scene.add(nurse);
+}
+
 
     function createNPCPool() {
       // 50 NPCs mit detaillierten Geschichten generieren
